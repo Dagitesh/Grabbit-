@@ -1,0 +1,18 @@
+const ROLES = Object.freeze({
+  CUSTOMER: 'CUSTOMER',
+  VENDOR: 'VENDOR',
+  ADMIN: 'ADMIN',
+});
+
+const OTP_EXPIRY_MINUTES = 5;
+const ACCESS_TOKEN_EXPIRY = '15m';
+const REFRESH_TOKEN_EXPIRY = '7d';
+const OTP_LENGTH = 6;
+
+module.exports = {
+  ROLES,
+  OTP_EXPIRY_MINUTES,
+  ACCESS_TOKEN_EXPIRY,
+  REFRESH_TOKEN_EXPIRY,
+  OTP_LENGTH,
+};
