@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:grabbit_app/core/theme/app_colors.dart';
 import 'package:grabbit_app/app_gate.dart';
 import 'package:grabbit_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:grabbit_app/features/customer/home/providers/category_provider.dart';
 import 'package:grabbit_app/features/customer/home/providers/deal_provider.dart';
 import 'package:grabbit_app/features/customer/home/providers/favorites_provider.dart';
 import 'package:grabbit_app/features/customer/orders/providers/order_provider.dart';
@@ -11,6 +12,10 @@ import 'package:grabbit_app/features/vendor/dashboard/providers/vendor_dashboard
 import 'package:grabbit_app/features/vendor/deals/providers/vendor_deal_provider.dart';
 import 'package:grabbit_app/features/vendor/orders/providers/vendor_order_provider.dart';
 import 'package:grabbit_app/features/vendor/profile/providers/vendor_profile_provider.dart';
+import 'package:grabbit_app/features/admin/dashboard/providers/admin_dashboard_provider.dart';
+import 'package:grabbit_app/features/admin/vendors/providers/admin_pending_vendors_provider.dart';
+import 'package:grabbit_app/features/admin/categories/providers/admin_categories_provider.dart';
+import 'package:grabbit_app/features/admin/settings/providers/admin_settings_provider.dart';
 
 void main() {
   runApp(const GrabbitApp());
@@ -24,6 +29,7 @@ class GrabbitApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
         ChangeNotifierProvider(create: (_) => DealProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
@@ -32,6 +38,10 @@ class GrabbitApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => VendorDealProvider()),
         ChangeNotifierProvider(create: (_) => VendorOrderProvider()),
         ChangeNotifierProvider(create: (_) => VendorProfileProvider()),
+        ChangeNotifierProvider(create: (_) => AdminDashboardProvider()),
+        ChangeNotifierProvider(create: (_) => AdminPendingVendorsProvider()),
+        ChangeNotifierProvider(create: (_) => AdminCategoriesProvider()),
+        ChangeNotifierProvider(create: (_) => AdminSettingsProvider()),
       ],
       child: MaterialApp(
         title: 'Grabbit',

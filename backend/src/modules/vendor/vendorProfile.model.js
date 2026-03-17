@@ -16,6 +16,11 @@ const VendorProfile = sequelize.define(
       references: { model: 'users', key: 'id' },
       onDelete: 'CASCADE',
     },
+    tin: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      unique: true,
+    },
     business_name: {
       type: DataTypes.STRING(255),
       allowNull: false,

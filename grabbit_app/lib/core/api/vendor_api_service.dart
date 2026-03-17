@@ -26,16 +26,16 @@ class VendorApiService {
     String? businessDescription,
     required String phone,
     String? location,
+    String? tin,
   }) async {
-    final response = await _dio.put(
-      ApiConstants.vendorProfile,
-      data: {
-        'business_name': businessName,
-        'business_description': businessDescription,
-        'phone': phone,
-        'location': location,
-      },
-    );
+    final data = <String, dynamic>{
+      'business_name': businessName,
+      'business_description': businessDescription,
+      'phone': phone,
+      'location': location,
+    };
+    if (tin != null) data['tin'] = tin;
+    final response = await _dio.put(ApiConstants.vendorProfile, data: data);
     return response.data as Map<String, dynamic>;
   }
 
@@ -87,6 +87,10 @@ class VendorApiService {
     required int quantityAvailable,
     required DateTime expiryDate,
     List<String>? images,
+    String? locationId,
+    int? totalQuantity,
+    DateTime? startTime,
+    DateTime? expiryTime,
   }) async {
     final data = <String, dynamic>{
       'title': title,
@@ -99,6 +103,10 @@ class VendorApiService {
       'expiry_date': expiryDate.toIso8601String(),
     };
     if (images != null && images.isNotEmpty) data['images'] = images;
+    if (locationId != null) data['location_id'] = locationId;
+    if (totalQuantity != null) data['total_quantity'] = totalQuantity;
+    if (startTime != null) data['start_time'] = startTime.toIso8601String();
+    if (expiryTime != null) data['expiry_time'] = expiryTime.toIso8601String();
     final response = await _dio.post(ApiConstants.deals, data: data);
     return response.data as Map<String, dynamic>;
   }
@@ -114,6 +122,10 @@ class VendorApiService {
     double? discountedPrice,
     int? quantityAvailable,
     DateTime? expiryDate,
+    DateTime? expiryTime,
+    DateTime? startTime,
+    int? totalQuantity,
+    String? locationId,
     bool? isActive,
     List<String>? images,
   }) async {
@@ -126,6 +138,10 @@ class VendorApiService {
     if (discountedPrice != null) data['discounted_price'] = discountedPrice;
     if (quantityAvailable != null) data['quantity_available'] = quantityAvailable;
     if (expiryDate != null) data['expiry_date'] = expiryDate.toIso8601String();
+    if (expiryTime != null) data['expiry_time'] = expiryTime.toIso8601String();
+    if (startTime != null) data['start_time'] = startTime.toIso8601String();
+    if (totalQuantity != null) data['total_quantity'] = totalQuantity;
+    if (locationId != null) data['location_id'] = locationId;
     if (isActive != null) data['is_active'] = isActive;
     if (images != null) data['images'] = images;
     final response = await _dio.put(ApiConstants.dealById(id), data: data);

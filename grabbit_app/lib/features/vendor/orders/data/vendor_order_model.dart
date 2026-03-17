@@ -8,6 +8,7 @@ class VendorOrderModel {
     required this.createdAt,
     this.discountedPrice,
     this.quantity,
+    this.claimCode,
   });
 
   final String id;
@@ -18,6 +19,7 @@ class VendorOrderModel {
   final DateTime createdAt;
   final double? discountedPrice;
   final int? quantity;
+  final String? claimCode;
 
   factory VendorOrderModel.fromJson(Map<String, dynamic> json) {
     return VendorOrderModel(
@@ -33,8 +35,21 @@ class VendorOrderModel {
               : DateTime.now()),
       discountedPrice: _toDouble(json['discounted_price'] ?? json['discountedPrice']),
       quantity: (json['quantity'] as num?)?.toInt(),
+      claimCode: json['claim_code'] as String? ?? json['claimCode'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'deal_id': dealId,
+        'deal_title': dealTitle,
+        'customer_name': customerName,
+        'status': status,
+        'created_at': createdAt.toIso8601String(),
+        'discounted_price': discountedPrice,
+        'quantity': quantity,
+        'claim_code': claimCode,
+      };
 
   static double? _toDouble(dynamic v) {
     if (v == null) return null;

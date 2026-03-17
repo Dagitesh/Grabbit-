@@ -5,6 +5,7 @@ import 'package:grabbit_app/core/widgets/empty_state.dart';
 import 'package:grabbit_app/core/widgets/error_view.dart';
 import 'package:grabbit_app/core/widgets/loading_overlay.dart';
 import 'package:grabbit_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:grabbit_app/features/customer/home/providers/category_provider.dart';
 import 'package:grabbit_app/features/customer/home/providers/deal_provider.dart';
 import 'package:grabbit_app/features/customer/home/providers/favorites_provider.dart';
 import 'package:grabbit_app/features/customer/home/presentation/widgets/category_filter_row.dart';
@@ -44,6 +45,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     final userName = user?.fullName.split(' ').first ?? 'Guest';
     final dealProvider = context.watch<DealProvider>();
     final favoritesProvider = context.watch<FavoritesProvider>();
+    final categoryProvider = context.watch<CategoryProvider>();
 
     final selectedLocation = dealProvider.selectedLocation ?? 'All';
 
@@ -109,8 +111,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     ),
                     const SizedBox(height: 16),
                     CategoryFilterRow(
-                      selectedCategoryId: dealProvider.selectedCategory,
-                      onCategorySelected: (id) => dealProvider.setFilters(category: id),
+                      categories: categoryProvider.categories,
+                      selectedCategoryId: dealProvider.selectedCategoryId,
+                      onCategorySelected: (id) => dealProvider.setFilters(categoryId: id),
                     ),
                     const SizedBox(height: 16),
                     Row(

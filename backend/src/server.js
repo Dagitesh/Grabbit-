@@ -17,14 +17,21 @@ const storage = multer.diskStorage({
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 require('./modules/user/user.model');
 require('./modules/vendor/vendorProfile.model');
+require('./modules/customer/customerProfile.model');
+require('./modules/location/location.model');
+require('./modules/category/category.model');
 require('./modules/deal/deal.model');
 require('./modules/order/order.model');
+require('./modules/payment/payment.model');
+require('./modules/review/review.model');
+require('./modules/appConfig/appConfig.model');
 require('./config/associations');
 const authRoutes = require('./modules/auth/auth.routes');
 const userRoutes = require('./modules/user/user.routes');
 const vendorRoutes = require('./modules/vendor/vendor.routes');
 const dealRoutes = require('./modules/deal/deal.routes');
 const orderRoutes = require('./modules/order/order.routes');
+const adminRoutes = require('./modules/admin/admin.routes');
 const errorHandler = require('./utils/errorHandler');
 
 const app = express();
@@ -54,6 +61,7 @@ app.use('/api', userRoutes);
 app.use('/api/vendor', vendorRoutes);
 app.use('/api', dealRoutes);
 app.use('/api', orderRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -78,7 +86,9 @@ app.use(errorHandler);
 async function start() {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
+    // Safer default for hosted environments: don't mutate schema unless explicitly enabled.
+    const syncOpts = process.env.DB_SYNC_ALTER === 'true' ? { alter: true } : {};
+    await sequelize.sync(syncOpts);
     console.log('Database connected and synced.');
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);

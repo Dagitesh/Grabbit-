@@ -5,6 +5,7 @@ import 'package:grabbit_app/features/auth/presentation/providers/auth_provider.d
 import 'package:grabbit_app/features/auth/presentation/screens/login_screen.dart';
 import 'package:grabbit_app/features/customer/shell/customer_shell_screen.dart';
 import 'package:grabbit_app/features/vendor/shell/vendor_shell_screen.dart';
+import 'package:grabbit_app/features/admin/shell/admin_shell_screen.dart';
 
 /// Routes to Login, Vendor shell, or Customer shell based on auth status and user role.
 class AppGate extends StatefulWidget {
@@ -49,6 +50,9 @@ class _AppGateState extends State<AppGate> {
     final effectiveRole = (auth.viewAsRole ?? user?.role ?? '').toUpperCase();
     if (effectiveRole == 'VENDOR') {
       return const VendorShellScreen();
+    }
+    if (effectiveRole == 'ADMIN') {
+      return const AdminShellScreen();
     }
 
     return const CustomerShellScreen();

@@ -15,6 +15,18 @@ const Deal = sequelize.define(
       references: { model: 'users', key: 'id' },
       onDelete: 'CASCADE',
     },
+    location_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: { model: 'locations', key: 'id' },
+      onDelete: 'SET NULL',
+    },
+    category_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: { model: 'categories', key: 'id' },
+      onDelete: 'SET NULL',
+    },
     title: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -37,16 +49,38 @@ const Deal = sequelize.define(
     },
     discounted_price: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
+      allowNull: true,
+    },
+    discount_price: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+    },
+    total_quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
     },
     quantity_available: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       defaultValue: 0,
+    },
+    available_quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
+    start_time: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     expiry_date: {
       type: DataTypes.DATE,
-      allowNull: false,
+      allowNull: true,
+    },
+    expiry_time: {
+      type: DataTypes.DATE,
+      allowNull: true,
     },
     is_active: {
       type: DataTypes.BOOLEAN,

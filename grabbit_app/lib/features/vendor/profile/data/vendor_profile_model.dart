@@ -7,6 +7,7 @@ class VendorProfileModel {
     required this.phone,
     this.location,
     required this.isApproved,
+    this.tin,
   });
 
   final String id;
@@ -16,6 +17,7 @@ class VendorProfileModel {
   final String phone;
   final String? location;
   final bool isApproved;
+  final String? tin;
 
   factory VendorProfileModel.fromJson(Map<String, dynamic> json) {
     return VendorProfileModel(
@@ -26,6 +28,18 @@ class VendorProfileModel {
       phone: json['phone'] as String,
       location: json['location'] as String?,
       isApproved: json['is_approved'] as bool? ?? false,
+      tin: json['tin'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'user_id': userId,
+        'business_name': businessName,
+        'business_description': businessDescription,
+        'phone': phone,
+        'location': location,
+        'is_approved': isApproved,
+        'tin': tin,
+      };
 }

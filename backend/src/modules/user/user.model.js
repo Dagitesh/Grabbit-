@@ -23,10 +23,12 @@ const User = sequelize.define(
     phone: {
       type: DataTypes.STRING(50),
       allowNull: true,
+      // unique: true — enable after cleaning duplicate phones (see migrations/001_grabbit_schema_v2.sql)
     },
-    password: {
+    password_hash: {
       type: DataTypes.STRING(255),
       allowNull: false,
+      field: 'password', // DB column remains "password" until you run migrations/001_grabbit_schema_v2.sql
     },
     role: {
       type: DataTypes.STRING(20),
@@ -55,11 +57,11 @@ const User = sequelize.define(
     createdAt: 'created_at',
     updatedAt: 'updated_at',
     defaultScope: {
-      attributes: { exclude: ['password', 'otp_code', 'otp_expires_at'] },
+      attributes: { exclude: ['password_hash', 'otp_code', 'otp_expires_at'] },
     },
     scopes: {
       withPassword: {
-        attributes: { include: ['password', 'otp_code', 'otp_expires_at'] },
+        attributes: { include: ['password_hash', 'otp_code', 'otp_expires_at'] },
       },
       withOtp: {
         attributes: { include: ['otp_code', 'otp_expires_at'] },

@@ -20,6 +20,7 @@ class DealProvider with ChangeNotifier {
   String? _search;
   String? _location;
   String? _category;
+  String? _categoryId;
   double? _minPrice;
   double? _maxPrice;
   bool _activeOnly = true;
@@ -27,6 +28,7 @@ class DealProvider with ChangeNotifier {
   List<DealModel> get deals => _deals;
   String? get selectedLocation => _location;
   String? get selectedCategory => _category;
+  String? get selectedCategoryId => _categoryId;
   bool get loading => _loading;
   bool get loadingMore => _loadingMore;
   String? get error => _error;
@@ -52,6 +54,7 @@ class DealProvider with ChangeNotifier {
         search: _search,
         location: _location,
         category: _category,
+        categoryId: _categoryId,
         minPrice: _minPrice,
         maxPrice: _maxPrice,
         active: _activeOnly,
@@ -78,10 +81,11 @@ class DealProvider with ChangeNotifier {
     }
   }
 
-  Future<void> setFilters({String? search, String? location, String? category, double? minPrice, double? maxPrice, bool? activeOnly}) async {
+  Future<void> setFilters({String? search, String? location, String? category, String? categoryId, double? minPrice, double? maxPrice, bool? activeOnly}) async {
     _search = search;
     _location = location;
     _category = category;
+    _categoryId = categoryId;
     _minPrice = minPrice;
     _maxPrice = maxPrice;
     if (activeOnly != null) _activeOnly = activeOnly;
@@ -92,6 +96,7 @@ class DealProvider with ChangeNotifier {
     _search = null;
     _location = null;
     _category = null;
+    _categoryId = null;
     _minPrice = null;
     _maxPrice = null;
     _activeOnly = true;

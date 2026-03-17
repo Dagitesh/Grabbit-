@@ -10,13 +10,14 @@ class ApiService {
 
   Dio get _dio => ApiClient().dio;
 
-  /// GET /api/deals?page=&limit=&search=&location=&category=&minPrice=&maxPrice=&active=
+  /// GET /api/deals?page=&limit=&search=&location=&category=&categoryId=&minPrice=&maxPrice=&active=
   Future<Map<String, dynamic>> getDeals({
     int page = 1,
     int limit = 10,
     String? search,
     String? location,
     String? category,
+    String? categoryId,
     double? minPrice,
     double? maxPrice,
     bool? active,
@@ -27,6 +28,7 @@ class ApiService {
       if (search != null && search.isNotEmpty) 'search': search,
       if (location != null && location.isNotEmpty) 'location': location,
       if (category != null && category.isNotEmpty) 'category': category,
+      if (categoryId != null && categoryId.isNotEmpty) 'categoryId': categoryId,
       if (minPrice != null) 'minPrice': minPrice.toString(),
       if (maxPrice != null) 'maxPrice': maxPrice.toString(),
       if (active != null) 'active': active.toString(),
@@ -68,6 +70,72 @@ class ApiService {
   /// GET /api/me
   Future<Map<String, dynamic>> getMe() async {
     final response = await _dio.get(ApiConstants.usersMe);
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// GET /api/admin/categories (public list for Explore)
+  Future<List<dynamic>> getCategories() async {
+    final response = await _dio.get(ApiConstants.categories);
+    final data = response.data;
+    if (data is List) return data;
+    return [];
+  }
+
+  /// GET /api/admin/app-config (public intro image)
+  Future<Map<String, dynamic>> getAppConfig() async {
+    final response = await _dio.get(ApiConstants.appConfig);
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// GET /api/admin/dashboard (admin only)
+  Future<Map<String, dynamic>> getAdminDashboard() async {
+    final response = await _dio.get(ApiConstants.adminDashboard);
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// GET /api/admin/vendors/pending (admin only)
+  Future<List<dynamic>> getAdminPendingVendors() async {
+    final response = await _dio.get(ApiConstants.adminVendorsPending);
+    final data = response.data;
+    if (data is List) return data;
+    return [];
+  }
+
+  /// PATCH /api/admin/vendors/:userId/approve (admin only)
+  Future<Map<String, dynamic>> adminApproveVendor(String userId) async {
+    final response = await _dio.patch(ApiConstants.adminVendorApprove(userId));
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// PATCH /api/admin/vendors/:userId/reject (admin only)
+  Future<Map<String, dynamic>> adminRejectVendor(String userId) async {
+    final response = await _dio.patch(ApiConstants.adminVendorReject(userId));
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// POST /api/admin/categories (admin only)
+  Future<Map<String, dynamic>> adminCreateCategory({required String name, String? icon}) async {
+    final response = await _dio.post(ApiConstants.categories, data: {'name': name, 'icon': icon ?? 'category'});
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// PUT /api/admin/categories/:id (admin only)
+  Future<Map<String, dynamic>> adminUpdateCategory(String id, {String? name, String? icon}) async {
+    final data = <String, dynamic>{};
+    if (name != null) data['name'] = name;
+    if (icon != null) data['icon'] = icon;
+    final response = await _dio.put(ApiConstants.categoryById(id), data: data);
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// DELETE /api/admin/categories/:id (admin only)
+  Future<void> adminDeleteCategory(String id) async {
+    await _dio.delete(ApiConstants.categoryById(id));
+  }
+
+  /// PUT /api/admin/app-config (admin only)
+  Future<Map<String, dynamic>> adminUpdateAppConfig({String? introImageUrl}) async {
+    final response = await _dio.put(ApiConstants.appConfig, data: {'intro_image_url': introImageUrl});
     return response.data as Map<String, dynamic>;
   }
 }
