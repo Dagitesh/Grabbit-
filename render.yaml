@@ -4,8 +4,8 @@ services:
     env: node
     plan: free
     rootDir: backend
-    buildCommand: npm install
-    startCommand: npm start
+    buildCommand: "npm install && npm rebuild"
+    startCommand: "npm start"
     autoDeploy: true
     healthCheckPath: /api/health
     envVars:
