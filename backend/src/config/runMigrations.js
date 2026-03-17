@@ -5,7 +5,8 @@ const User = require('../modules/user/user.model');
 async function run() {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
+    const syncOpts = process.env.DB_SYNC_ALTER === 'true' ? { alter: true } : {};
+    await sequelize.sync(syncOpts);
     console.log('Migrations/sync completed.');
     process.exit(0);
   } catch (err) {

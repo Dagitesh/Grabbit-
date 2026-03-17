@@ -48,6 +48,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
             phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
           );
       if (!mounted) return;
+      if (_selectedRole == 'VENDOR') {
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            title: const Text('Thank you!'),
+            content: const Text(
+              'Thank you for registering as a vendor!\n\n'
+              'Our team will review your application and reach out to you soon.\n\n'
+              'In the meantime, you can log in or register as a customer to explore Grabbit\'s services.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        if (!mounted) return;
+      }
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => OTPVerificationScreen(email: _emailController.text.trim()),

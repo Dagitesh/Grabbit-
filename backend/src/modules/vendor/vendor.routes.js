@@ -22,18 +22,20 @@ router.get('/profile', async (req, res, next) => {
 // PUT /api/vendor/profile
 router.put('/profile', async (req, res, next) => {
   try {
-    const { business_name, business_description, phone, location } = req.body;
+    const { business_name, business_description, phone, location, tin } = req.body;
     const profile = await vendorProfileRepository.getOrCreate(req.user.id, {
       business_name: business_name || 'My Business',
       business_description: business_description ?? null,
       phone: phone || '',
       location: location ?? null,
+      tin: tin ?? null,
     });
     await profile.update({
       business_name: business_name ?? profile.business_name,
       business_description: business_description !== undefined ? business_description : profile.business_description,
       phone: phone ?? profile.phone,
       location: location !== undefined ? location : profile.location,
+      ...(tin !== undefined && { tin: tin || null }),
     });
     res.json(profile.toJSON());
   } catch (err) {
@@ -102,7 +104,7 @@ router.get('/orders', async (req, res, next) => {
     const orders = await Order.findAll({
       where: { deal_id: vendorDealIds },
       include: [
-        { model: Deal, as: 'deal', attributes: ['id', 'title', 'discounted_price'] },
+        { model: Deal, as: 'deal', attributes: ['id', 'title', 'discounted_price', 'discount_price'] },
         { model: User, as: 'customer', attributes: ['id', 'full_name', 'email'] },
       ],
       order: [['created_at', 'DESC']],

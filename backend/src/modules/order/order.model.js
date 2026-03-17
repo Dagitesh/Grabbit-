@@ -13,13 +13,13 @@ const Order = sequelize.define(
       type: DataTypes.UUID,
       allowNull: false,
       references: { model: 'users', key: 'id' },
-      onDelete: 'CASCADE',
+      onDelete: 'RESTRICT',
     },
     deal_id: {
       type: DataTypes.UUID,
       allowNull: false,
       references: { model: 'deals', key: 'id' },
-      onDelete: 'CASCADE',
+      onDelete: 'RESTRICT',
     },
     quantity: {
       type: DataTypes.INTEGER,
@@ -30,6 +30,11 @@ const Order = sequelize.define(
       type: DataTypes.STRING(20),
       allowNull: false,
       defaultValue: 'Created',
+    },
+    claim_code: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+      unique: true,
     },
     pickup_at: {
       type: DataTypes.DATE,

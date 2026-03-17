@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: grabbit-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_HOST
+        fromDatabase:
+          name: grabbit-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: grabbit-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: grabbit-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: grabbit-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: grabbit-db
+          property: password
+      # Important: Render assigns PORT automatically
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      # Safer default: do not auto-alter schema in production
+      - key: DB_SYNC_ALTER
+        value: "false"
+
+databases:
+  - name: grabbit-db
+    plan: free

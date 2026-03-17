@@ -2,6 +2,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const userRepository = require('../user/user.repository');
+const VendorProfile = require('../vendor/vendorProfile.model');
 const {
   ROLES,
   OTP_EXPIRY_MINUTES,
@@ -45,6 +46,12 @@ function generateRefreshToken(userId) {
 
 const authService = {
   async register({ full_name, email, phone, password, role }) {
+    const effectiveRole = role || ROLES.CUSTOMER;
+    if (effectiveRole === ROLES.ADMIN) {
+      const err = new Error('Admin role cannot be self-registered');
+      err.statusCode = 403;
+      throw err;
+    }
     const existing = await userRepository.findByEmail(email);
     if (existing) {
       const err = new Error('Email already registered');
@@ -61,12 +68,22 @@ const authService = {
       full_name,
       email,
       phone: phone || null,
-      password: hashedPassword,
-      role: role || ROLES.CUSTOMER,
+      password_hash: hashedPassword,
+      role: effectiveRole,
       is_verified: false,
       otp_code: otpCode,
       otp_expires_at: otpExpiresAt,
     });
+
+    // When role is VENDOR, create VendorProfile with pending approval
+    if (user.role === ROLES.VENDOR) {
+      await VendorProfile.create({
+        user_id: user.id,
+        business_name: 'My Business',
+        phone: phone || '',
+        is_approved: false,
+      });
+    }
 
     // In production: send OTP via email/SMS mock service
     if (process.env.MOCK_OTP_LOG === 'true') {
@@ -91,7 +108,7 @@ const authService = {
       throw err;
     }
 
-    const match = await bcrypt.compare(password, user.password);
+    const match = await bcrypt.compare(password, user.password_hash);
     if (!match) {
       const err = new Error('Invalid email or password');
       err.statusCode = 401;

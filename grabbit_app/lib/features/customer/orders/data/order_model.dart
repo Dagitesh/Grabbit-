@@ -8,6 +8,7 @@ class OrderModel {
     this.discountedPrice,
     this.quantity,
     this.pickupAt,
+    this.claimCode,
   });
 
   final String id;
@@ -18,6 +19,8 @@ class OrderModel {
   final double? discountedPrice;
   final int? quantity;
   final DateTime? pickupAt;
+  /// Unique code for claiming the order (e.g. at pickup).
+  final String? claimCode;
 
   /// Can cancel only if more than 2 hours before pickup and not already completed/cancelled.
   bool get canCancel {
@@ -39,8 +42,21 @@ class OrderModel {
       discountedPrice: _toDouble(json['discounted_price'] ?? json['discountedPrice']),
       quantity: (json['quantity'] as num?)?.toInt(),
       pickupAt: json['pickup_at'] != null ? DateTime.parse(json['pickup_at'] as String) : null,
+      claimCode: json['claim_code'] as String? ?? json['claimCode'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'deal_id': dealId,
+        'deal_title': dealTitle,
+        'status': status,
+        'created_at': createdAt.toIso8601String(),
+        'discounted_price': discountedPrice,
+        'quantity': quantity,
+        'pickup_at': pickupAt?.toIso8601String(),
+        'claim_code': claimCode,
+      };
 
   static double? _toDouble(dynamic v) {
     if (v == null) return null;
