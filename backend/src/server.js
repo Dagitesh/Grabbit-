@@ -83,9 +83,26 @@ app.use('/api', (req, res, next) => {
 
 app.use(errorHandler);
 
+async function connectWithRetry(maxAttempts = 10, delayMs = 3000) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await sequelize.authenticate();
+      return;
+    } catch (err) {
+      const isRefused = err && (err.code === 'ECONNREFUSED' || (err.parent && err.parent.code === 'ECONNREFUSED'));
+      console.warn(
+        `Database connection attempt ${attempt}/${maxAttempts} failed${isRefused ? ' (connection refused)' : ''}:`,
+        err.message || err
+      );
+      if (attempt === maxAttempts) throw err;
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+}
+
 async function start() {
   try {
-    await sequelize.authenticate();
+    await connectWithRetry();
     // Safer default for hosted environments: don't mutate schema unless explicitly enabled.
     const syncOpts = process.env.DB_SYNC_ALTER === 'true' ? { alter: true } : {};
     await sequelize.sync(syncOpts);
