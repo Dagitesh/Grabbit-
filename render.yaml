@@ -11,6 +11,11 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # Prefer full URL so connection uses Render's internal host
+      - key: DATABASE_URL
+        fromDatabase:
+          name: grabbit-db
+          property: connectionString
       - key: DB_HOST
         fromDatabase:
           name: grabbit-db

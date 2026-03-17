@@ -83,7 +83,8 @@ app.use('/api', (req, res, next) => {
 
 app.use(errorHandler);
 
-async function connectWithRetry(maxAttempts = 10, delayMs = 3000) {
+// Render free Postgres can take 1–2 min to wake; retry long enough for that
+async function connectWithRetry(maxAttempts = 24, delayMs = 5000) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       await sequelize.authenticate();
