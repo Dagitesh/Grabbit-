@@ -1,57 +1,385 @@
 {
   "info": {
-    "name": "Grabbit Auth API",
+    "name": "Grabbit API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Register",
-      "request": {
-        "method": "POST",
-        "header": [{"key": "Content-Type", "value": "application/json"}],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"full_name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"CUSTOMER\"\n}"
+      "name": "Misc",
+      "item": [
+        {
+          "name": "Health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/health"
+          }
         },
-        "url": "{{baseUrl}}/api/auth/register"
-      }
+        {
+          "name": "Upload (multipart/form-data)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/upload",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            }
+          }
+        }
+      ]
     },
     {
-      "name": "Verify OTP",
-      "request": {
-        "method": "POST",
-        "header": [{"key": "Content-Type", "value": "application/json"}],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"john@example.com\",\n  \"otp\": \"123456\"\n}"
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+15551234567\",\n  \"password\": \"password123\",\n  \"role\": \"CUSTOMER\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
         },
-        "url": "{{baseUrl}}/api/auth/verify-otp"
-      }
+        {
+          "name": "Register (Vendor)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Vendor One\",\n  \"email\": \"vendor@example.com\",\n  \"phone\": \"+15559876543\",\n  \"password\": \"password123\",\n  \"role\": \"VENDOR\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register"
+          }
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"otpCode\": \"123456\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/verify-otp"
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/refresh-token"
+          }
+        }
+      ]
     },
     {
-      "name": "Login",
-      "request": {
-        "method": "POST",
-        "header": [{"key": "Content-Type", "value": "application/json"}],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
-        },
-        "url": "{{baseUrl}}/api/auth/login"
-      }
+      "name": "User",
+      "item": [
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/me"
+          }
+        }
+      ]
     },
     {
-      "name": "Refresh Token",
-      "request": {
-        "method": "POST",
-        "header": [{"key": "Content-Type", "value": "application/json"}],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"refreshToken\": \"YOUR_REFRESH_TOKEN\"\n}"
+      "name": "Deals",
+      "item": [
+        {
+          "name": "List Deals (with filters)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/deals?page=1&limit=10&search=&location=&categoryId={{categoryId}}&minPrice=&maxPrice=&active=true"
+          }
         },
-        "url": "{{baseUrl}}/api/auth/refresh-token"
-      }
+        {
+          "name": "Get Deal by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/deals/{{dealId}}"
+          }
+        },
+        {
+          "name": "Create Deal (Vendor)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Fresh Grocery Bag\",\n  \"description\": \"Mixed items\",\n  \"location\": \"Downtown\",\n  \"category\": \"Groceries\",\n  \"category_id\": \"{{categoryId}}\",\n  \"images\": [\"https://example.com/image1.jpg\"],\n  \"original_price\": 25.0,\n  \"discount_price\": 10.0,\n  \"available_quantity\": 10,\n  \"total_quantity\": 10,\n  \"start_time\": \"2026-01-01T10:00:00.000Z\",\n  \"expiry_time\": \"2026-01-01T23:59:59.000Z\"\n}"
+            },
+            "url": "{{baseUrl}}/api/deals"
+          }
+        },
+        {
+          "name": "Update Deal (Vendor)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Fresh Grocery Bag (Updated)\",\n  \"is_active\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/deals/{{dealId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Create Order (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deal_id\": \"{{dealId}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": "{{baseUrl}}/api/orders"
+          }
+        },
+        {
+          "name": "List My Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/orders"
+          }
+        },
+        {
+          "name": "Cancel Order (Customer)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/orders/{{orderId}}/cancel"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vendor (Vendor-only)",
+      "item": [
+        {
+          "name": "Get Vendor Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/vendor/profile"
+          }
+        },
+        {
+          "name": "Update Vendor Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"business_name\": \"My Business\",\n  \"business_description\": \"We sell daily deals\",\n  \"phone\": \"+15551234567\",\n  \"location\": \"Downtown\",\n  \"tin\": \"123-456-789\"\n}"
+            },
+            "url": "{{baseUrl}}/api/vendor/profile"
+          }
+        },
+        {
+          "name": "Vendor Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/vendor/dashboard"
+          }
+        },
+        {
+          "name": "Vendor Deals",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/vendor/deals"
+          }
+        },
+        {
+          "name": "Vendor Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/vendor/orders"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Public: List Categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/categories"
+          }
+        },
+        {
+          "name": "Public: Get App Config",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/admin/app-config"
+          }
+        },
+        {
+          "name": "Admin: Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Groceries\",\n  \"icon\": \"shopping_cart\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/categories"
+          }
+        },
+        {
+          "name": "Admin: Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Groceries (Updated)\",\n  \"icon\": \"category\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Admin: Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/admin/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Admin: Pending Vendors",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/admin/vendors/pending"
+          }
+        },
+        {
+          "name": "Admin: Approve Vendor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/admin/vendors/{{vendorUserId}}/approve"
+          }
+        },
+        {
+          "name": "Admin: Reject Vendor",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/admin/vendors/{{vendorUserId}}/reject"
+          }
+        },
+        {
+          "name": "Admin: Update App Config (Intro Image URL)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"intro_image_url\": \"https://example.com/intro.png\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/app-config"
+          }
+        },
+        {
+          "name": "Admin: Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/admin/dashboard"
+          }
+        }
+      ]
     }
   ],
-  "variable": [{"key": "baseUrl", "value": "http://localhost:3000"}]
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "dealId", "value": "" },
+    { "key": "orderId", "value": "" },
+    { "key": "vendorUserId", "value": "" },
+    { "key": "categoryId", "value": "" }
+  ]
 }
