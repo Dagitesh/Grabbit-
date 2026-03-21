@@ -2,7 +2,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const userRepository = require('../user/user.repository');
-const VendorProfile = require('../vendor/vendorProfile.model');
+const CustomerProfile = require('../customer/customerProfile.model');
+const Subcity = require('../subcity/subcity.model');
 const {
   ROLES,
   OTP_EXPIRY_MINUTES,
@@ -45,19 +46,25 @@ function generateRefreshToken(userId) {
 }
 
 const authService = {
-  async register({ full_name, email, phone, password, role }) {
-    const effectiveRole = role || ROLES.CUSTOMER;
-    if (effectiveRole === ROLES.ADMIN) {
-      const err = new Error('Admin role cannot be self-registered');
-      err.statusCode = 403;
+  /** Public self-registration: customers only. Vendors are created by admin. */
+  async register({ first_name, last_name, email, phone, password, subcity_id }) {
+    const subcity = await Subcity.findByPk(subcity_id);
+    if (!subcity) {
+      const err = new Error('Invalid location (subcity). Choose a valid Addis Ababa subcity.');
+      err.statusCode = 400;
       throw err;
     }
+
     const existing = await userRepository.findByEmail(email);
     if (existing) {
       const err = new Error('Email already registered');
       err.statusCode = 409;
       throw err;
     }
+
+    const fn = String(first_name).trim();
+    const ln = String(last_name).trim();
+    const full_name = `${fn} ${ln}`.trim();
 
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
     const otpCode = generateOtp();
@@ -66,26 +73,22 @@ const authService = {
     const user = await userRepository.create({
       id: uuidv4(),
       full_name,
-      email,
-      phone: phone || null,
+      email: String(email).trim().toLowerCase(),
+      phone: phone ? String(phone).trim() : null,
       password_hash: hashedPassword,
-      role: effectiveRole,
+      role: ROLES.CUSTOMER,
       is_verified: false,
       otp_code: otpCode,
       otp_expires_at: otpExpiresAt,
     });
 
-    // When role is VENDOR, create VendorProfile with pending approval
-    if (user.role === ROLES.VENDOR) {
-      await VendorProfile.create({
-        user_id: user.id,
-        business_name: 'My Business',
-        phone: phone || '',
-        is_approved: false,
-      });
-    }
+    await CustomerProfile.create({
+      user_id: user.id,
+      first_name: fn,
+      last_name: ln,
+      subcity_id,
+    });
 
-    // In production: send OTP via email/SMS mock service
     if (process.env.MOCK_OTP_LOG === 'true') {
       console.log(`[MOCK OTP] Email ${email} -> OTP: ${otpCode} (expires in ${OTP_EXPIRY_MINUTES} min)`);
     }
@@ -96,6 +99,7 @@ const authService = {
       email: user.email,
       role: user.role,
       is_verified: user.is_verified,
+      subcity_id,
       message: 'Registration successful. Please verify your email with the OTP sent.',
     };
   },

@@ -1,42 +1,43 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../../config/database');
 
-const CustomerProfile = sequelize.define(
-  'CustomerProfile',
+const VendorNotification = sequelize.define(
+  'VendorNotification',
   {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    user_id: {
+    vendor_user_id: {
       type: DataTypes.UUID,
       allowNull: false,
-      unique: true,
       references: { model: 'users', key: 'id' },
-      onDelete: 'RESTRICT',
+      onDelete: 'CASCADE',
     },
-    first_name: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
+    type: {
+      type: DataTypes.STRING(32),
+      allowNull: false,
     },
-    last_name: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
+    title: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
     },
-    subcity_id: {
-      type: DataTypes.UUID,
-      allowNull: true,
-      references: { model: 'subcities', key: 'id' },
-      onDelete: 'SET NULL',
-    },
-    saved_preferences: {
+    body: {
       type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    metadata: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+    },
+    read_at: {
+      type: DataTypes.DATE,
       allowNull: true,
     },
   },
   {
-    tableName: 'customer_profiles',
+    tableName: 'vendor_notifications',
     underscored: true,
     timestamps: true,
     createdAt: 'created_at',
@@ -44,4 +45,4 @@ const CustomerProfile = sequelize.define(
   }
 );
 
-module.exports = CustomerProfile;
+module.exports = VendorNotification;

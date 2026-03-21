@@ -27,6 +27,12 @@ const Deal = sequelize.define(
       references: { model: 'categories', key: 'id' },
       onDelete: 'SET NULL',
     },
+    subcity_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: { model: 'subcities', key: 'id' },
+      onDelete: 'SET NULL',
+    },
     title: {
       type: DataTypes.STRING(255),
       allowNull: false,
