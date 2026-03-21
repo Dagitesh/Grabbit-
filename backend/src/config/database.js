@@ -36,11 +36,15 @@ if (databaseUrl) {
   sequelize = new Sequelize(databaseUrl, commonOpts);
   try {
     const parsed = new url.URL(databaseUrl);
-    console.log(
-      `[DB] Using DATABASE_URL host=${parsed.hostname} port=${parsed.port || 5432} ssl=${sslRequired}`
-    );
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(
+        `[DB] Using DATABASE_URL host=${parsed.hostname} port=${parsed.port || 5432} ssl=${sslRequired}`
+      );
+    }
   } catch {
-    console.log(`[DB] Using DATABASE_URL (could not parse host). ssl=${sslRequired}`);
+    if (process.env.NODE_ENV !== 'test') {
+      console.log(`[DB] Using DATABASE_URL (could not parse host). ssl=${sslRequired}`);
+    }
   }
 } else {
   if (process.env.DATABASE_URL != null && String(process.env.DATABASE_URL).trim() !== '') {
@@ -50,7 +54,9 @@ if (databaseUrl) {
   }
   const host = process.env.DB_HOST || 'localhost';
   const port = Number(process.env.DB_PORT) || 5432;
-  console.log(`[DB] Using discrete env vars host=${host} port=${port} ssl=${sslRequired}`);
+  if (process.env.NODE_ENV !== 'test') {
+    console.log(`[DB] Using discrete env vars host=${host} port=${port} ssl=${sslRequired}`);
+  }
   sequelize = new Sequelize(
     process.env.DB_NAME || 'grabbit_db',
     process.env.DB_USER || 'postgres',

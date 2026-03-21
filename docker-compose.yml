@@ -1,0 +1,60 @@
+# Grabbit — PostgreSQL + API (local dev / self-hosted)
+#
+# Usage:
+#   docker compose up --build
+#   API: http://localhost:3000  |  Health: GET http://localhost:3000/api/health
+#
+# First-time DB (after containers are up):
+#   docker compose exec api npm run db:seed
+#
+# Optional: copy docker-compose.env.example → .env.docker and set secrets, then:
+#   docker compose --env-file .env.docker up --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: grabbit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: grabbit
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grabbit_dev_password}
+      POSTGRES_DB: grabbit_db
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - grabbit_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grabbit -d grabbit_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: grabbit-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Hostname `postgres` = Docker Compose service name
+      DATABASE_URL: postgresql://grabbit:${POSTGRES_PASSWORD:-grabbit_dev_password}@postgres:5432/grabbit_db
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-grabbit-docker-jwt-access-secret-min-32-chars!!}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-grabbit-docker-jwt-refresh-secret-min-32-chars!!}
+      BASE_URL: ${BASE_URL:-http://localhost:3000}
+      DB_SSL: "false"
+      # Set to "true" once schema exists if you need ALTER on existing tables
+      DB_SYNC_ALTER: ${DB_SYNC_ALTER:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - grabbit_uploads:/app/uploads
+
+volumes:
+  grabbit_pgdata:
+  grabbit_uploads:
