@@ -170,4 +170,40 @@ class ApiService {
     final response = await _dio.put(ApiConstants.appConfig, data: {'intro_image_url': introImageUrl});
     return response.data as Map<String, dynamic>;
   }
+
+  /// GET /api/admin/deal-moderation-reasons (admin only)
+  Future<List<dynamic>> getAdminDealModerationReasons() async {
+    final response = await _dio.get(ApiConstants.adminDealModerationReasons);
+    final data = response.data;
+    if (data is List) return data;
+    return [];
+  }
+
+  /// GET /api/admin/deals (admin only)
+  Future<Map<String, dynamic>> getAdminDeals({
+    int page = 1,
+    int limit = 20,
+    bool includeRemoved = false,
+    String? search,
+  }) async {
+    final response = await _dio.get(
+      ApiConstants.adminDeals,
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+        if (includeRemoved) 'includeRemoved': 'true',
+        if (search != null && search.isNotEmpty) 'search': search,
+      },
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// POST /api/admin/deals/:id/remove (admin only)
+  Future<Map<String, dynamic>> adminRemoveDeal(String dealId, String reasonCode) async {
+    final response = await _dio.post(
+      ApiConstants.adminDealRemove(dealId),
+      data: {'reason_code': reasonCode},
+    );
+    return response.data as Map<String, dynamic>;
+  }
 }

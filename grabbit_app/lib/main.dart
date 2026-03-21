@@ -16,6 +16,7 @@ import 'package:grabbit_app/features/admin/dashboard/providers/admin_dashboard_p
 import 'package:grabbit_app/features/admin/vendors/providers/admin_pending_vendors_provider.dart';
 import 'package:grabbit_app/features/admin/categories/providers/admin_categories_provider.dart';
 import 'package:grabbit_app/features/admin/settings/providers/admin_settings_provider.dart';
+import 'package:grabbit_app/features/admin/deals/providers/admin_deals_provider.dart';
 
 void main() {
   runApp(const GrabbitApp());
@@ -42,6 +43,7 @@ class GrabbitApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AdminPendingVendorsProvider()),
         ChangeNotifierProvider(create: (_) => AdminCategoriesProvider()),
         ChangeNotifierProvider(create: (_) => AdminSettingsProvider()),
+        ChangeNotifierProvider(create: (_) => AdminDealsProvider()),
       ],
       child: MaterialApp(
         title: 'Grabbit',

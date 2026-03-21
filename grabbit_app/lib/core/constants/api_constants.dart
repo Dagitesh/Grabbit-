@@ -45,4 +45,7 @@ class ApiConstants {
   static String adminVendorReject(String userId) => '/api/admin/vendors/$userId/reject';
   static const String adminVendorRegister = '/api/admin/vendors/register';
   static const String adminVendors = '/api/admin/vendors';
+  static const String adminDealModerationReasons = '/api/admin/deal-moderation-reasons';
+  static const String adminDeals = '/api/admin/deals';
+  static String adminDealRemove(String id) => '/api/admin/deals/$id/remove';
 }
