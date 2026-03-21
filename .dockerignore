@@ -1,0 +1,10 @@
+# Keep Docker build context small; backend is copied explicitly in Dockerfile
+grabbit_app
+**/node_modules
+.git
+.github
+.cursor
+.vscode
+*.log
+.env
+backend/uploads
