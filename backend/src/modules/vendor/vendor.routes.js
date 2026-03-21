@@ -6,6 +6,7 @@ const vendorProfileRepository = require('./vendorProfile.repository');
 const Deal = require('../deal/deal.model');
 const Order = require('../order/order.model');
 const VendorNotification = require('../notification/vendorNotification.model');
+const { parseDealImages } = require('../../utils/parseDealImages');
 
 const router = express.Router();
 
@@ -89,6 +90,9 @@ router.get('/deals', async (req, res, next) => {
     const list = deals.map((d) => {
       const j = d.toJSON();
       j.expiry_date = j.expiry_date ? new Date(j.expiry_date).toISOString().slice(0, 10) : j.expiry_date;
+      j.images = parseDealImages(j.images);
+      j.original_price = Number(j.original_price);
+      j.discounted_price = Number(j.discount_price ?? j.discounted_price);
       return j;
     });
     res.json(list);

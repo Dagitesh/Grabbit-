@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const { Op } = require('sequelize');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { ROLES } = require('../../config/constants');
 const Category = require('../category/category.model');
@@ -11,7 +12,11 @@ const User = require('../user/user.model');
 const Deal = require('../deal/deal.model');
 const Order = require('../order/order.model');
 const VendorBranch = require('../vendor/vendorBranch.model');
+const Subcity = require('../subcity/subcity.model');
 const { registerVendorByAdmin } = require('./adminVendor.service');
+const { parseDealImages } = require('../../utils/parseDealImages');
+const { DEAL_MODERATION_REASONS, getReasonByCode } = require('../../config/dealModerationReasons');
+const { notifyVendor } = require('../../services/vendorNotify.service');
 
 const router = express.Router();
 
@@ -236,6 +241,114 @@ router.get('/dashboard', async (req, res, next) => {
       completedOrders,
       revenue: null,
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---- Deal moderation (preset reasons + remove + notify vendor) ----
+router.get('/deal-moderation-reasons', (req, res) => {
+  res.json(DEAL_MODERATION_REASONS);
+});
+
+router.get('/deals', async (req, res, next) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const offset = (page - 1) * limit;
+    const includeRemoved = req.query.includeRemoved === 'true';
+    const search = (req.query.search || '').trim();
+    const where = includeRemoved ? {} : { removed_by_admin: false };
+    if (search) {
+      where[Op.or] = [
+        { title: { [Op.iLike]: `%${search}%` } },
+        { description: { [Op.iLike]: `%${search}%` } },
+      ];
+    }
+    const { count, rows } = await Deal.findAndCountAll({
+      where,
+      limit,
+      offset,
+      order: [['created_at', 'DESC']],
+      include: [
+        { model: Category, as: 'categoryRef', attributes: ['id', 'name'], required: false },
+        { model: Subcity, as: 'subcity', attributes: ['id', 'name'], required: false },
+      ],
+    });
+    const vendorIds = [...new Set(rows.map((d) => d.vendor_id))];
+    const vendors =
+      vendorIds.length > 0
+        ? await User.findAll({
+            where: { id: vendorIds },
+            attributes: ['id', 'full_name', 'email', 'phone'],
+          })
+        : [];
+    const vendorMap = Object.fromEntries(vendors.map((u) => [u.id, u.toJSON()]));
+    const list = rows.map((d) => {
+      const j = d.toJSON();
+      j.images = parseDealImages(j.images);
+      j.vendor = vendorMap[j.vendor_id] || null;
+      j.category_name = j.categoryRef?.name ?? j.category;
+      j.subcity_name = j.subcity?.name ?? null;
+      delete j.categoryRef;
+      delete j.subcity;
+      j.original_price = Number(j.original_price);
+      j.discounted_price = Number(j.discount_price ?? j.discounted_price);
+      return j;
+    });
+    const totalPages = Math.ceil(count / limit) || 1;
+    res.json({ deals: list, total: count, page, limit, totalPages });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/deals/:id/remove', async (req, res, next) => {
+  try {
+    const reason = getReasonByCode(req.body?.reason_code);
+    if (!reason) {
+      const err = new Error(
+        'Invalid or missing reason_code. Use GET /api/admin/deal-moderation-reasons for allowed values.'
+      );
+      err.statusCode = 400;
+      return next(err);
+    }
+    const deal = await Deal.findByPk(req.params.id);
+    if (!deal) {
+      const err = new Error('Deal not found');
+      err.statusCode = 404;
+      return next(err);
+    }
+    if (deal.removed_by_admin) {
+      const err = new Error('Deal was already removed');
+      err.statusCode = 400;
+      return next(err);
+    }
+    await deal.update({
+      removed_by_admin: true,
+      is_active: false,
+      admin_removal_reason_code: reason.code,
+      admin_removal_reason_label: reason.label,
+      admin_removed_at: new Date(),
+    });
+    await notifyVendor(
+      deal.vendor_id,
+      'deal_removed',
+      'Deal removed by moderator',
+      `Your deal "${deal.title}" was removed from the marketplace. Reason: ${reason.label}`,
+      {
+        deal_id: deal.id,
+        reason_code: reason.code,
+        reason_label: reason.label,
+      }
+    );
+    await deal.reload();
+    const j = deal.toJSON();
+    j.images = parseDealImages(j.images);
+    j.vendor = null;
+    const v = await User.findByPk(deal.vendor_id, { attributes: ['id', 'full_name', 'email', 'phone'] });
+    if (v) j.vendor = v.toJSON();
+    res.json({ success: true, deal: j, message: 'Deal removed. Vendor has been notified.' });
   } catch (err) {
     next(err);
   }
