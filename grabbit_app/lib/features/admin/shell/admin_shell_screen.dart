@@ -3,7 +3,8 @@ import 'package:grabbit_app/core/theme/app_colors.dart';
 import 'package:grabbit_app/features/admin/dashboard/presentation/screens/admin_dashboard_screen.dart';
 import 'package:grabbit_app/features/admin/vendors/presentation/screens/admin_pending_vendors_screen.dart';
 import 'package:grabbit_app/features/admin/categories/presentation/screens/admin_categories_screen.dart';
-import 'package:grabbit_app/features/admin/settings/presentation/screens/admin_settings_screen.dart';
+import 'package:grabbit_app/features/admin/deals/presentation/screens/admin_deals_screen.dart';
+import 'package:grabbit_app/features/admin/profile/presentation/screens/admin_profile_screen.dart';
 
 class AdminShellScreen extends StatefulWidget {
   const AdminShellScreen({super.key});
@@ -17,9 +18,10 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 
   static const List<Widget> _screens = [
     AdminDashboardScreen(),
+    AdminDealsScreen(),
     AdminPendingVendorsScreen(),
     AdminCategoriesScreen(),
-    AdminSettingsScreen(),
+    AdminProfileScreen(),
   ];
 
   static const Color _unselectedColor = Color(0xFF9E9E9E);
@@ -47,6 +49,11 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.local_offer_outlined, size: 26),
+            activeIcon: Icon(Icons.local_offer, size: 26),
+            label: 'Deals',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.pending_actions_outlined, size: 26),
             activeIcon: Icon(Icons.pending_actions, size: 26),
             label: 'Vendors',
@@ -57,9 +64,9 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             label: 'Categories',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined, size: 26),
-            activeIcon: Icon(Icons.settings, size: 26),
-            label: 'Settings',
+            icon: Icon(Icons.person_outline, size: 26),
+            activeIcon: Icon(Icons.person, size: 26),
+            label: 'Profile',
           ),
         ],
       ),
