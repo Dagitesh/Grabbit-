@@ -13,23 +13,9 @@ class AuthProvider with ChangeNotifier {
 
   AuthStatus _status = AuthStatus.initial;
   UserModel? _user;
-  /// When set, AppGate uses this for shell routing (VENDOR vs CUSTOMER). Cleared on logout.
-  String? _viewAsRole;
-
   AuthStatus get status => _status;
   UserModel? get user => _user;
-  String? get viewAsRole => _viewAsRole;
   bool get isAuthenticated => _status == AuthStatus.authenticated;
-
-  void setViewAsRole(String? role) {
-    _viewAsRole = role;
-    notifyListeners();
-  }
-
-  void clearViewAsRole() {
-    _viewAsRole = null;
-    notifyListeners();
-  }
 
   final _api = AuthApiService();
   final _storage = SecureStorageService();
@@ -71,18 +57,20 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<Map<String, dynamic>> register({
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
-    required String role,
-    String? phone,
+    required String phone,
+    required String subcityId,
   }) async {
     return _api.register(
-      fullName: fullName,
+      firstName: firstName,
+      lastName: lastName,
       email: email,
       password: password,
-      role: role,
       phone: phone,
+      subcityId: subcityId,
     );
   }
 
@@ -98,7 +86,6 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     await _storage.clearAll();
     _user = null;
-    _viewAsRole = null;
     _status = AuthStatus.unauthenticated;
     notifyListeners();
   }

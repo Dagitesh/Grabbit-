@@ -76,10 +76,12 @@ class VendorApiService {
     return null;
   }
 
-  /// POST /api/deals
+  /// POST /api/deals (requires subcity_id + category_id)
   Future<Map<String, dynamic>> createDeal({
     required String title,
     String? description,
+    required String subcityId,
+    required String categoryId,
     String? location,
     String? category,
     required double originalPrice,
@@ -95,6 +97,8 @@ class VendorApiService {
     final data = <String, dynamic>{
       'title': title,
       'description': description,
+      'subcity_id': subcityId,
+      'category_id': categoryId,
       'location': location,
       'category': category,
       'original_price': originalPrice,
@@ -116,6 +120,8 @@ class VendorApiService {
     String id, {
     String? title,
     String? description,
+    String? subcityId,
+    String? categoryId,
     String? location,
     String? category,
     double? originalPrice,
@@ -132,6 +138,8 @@ class VendorApiService {
     final data = <String, dynamic>{};
     if (title != null) data['title'] = title;
     if (description != null) data['description'] = description;
+    if (subcityId != null) data['subcity_id'] = subcityId;
+    if (categoryId != null) data['category_id'] = categoryId;
     if (location != null) data['location'] = location;
     if (category != null) data['category'] = category;
     if (originalPrice != null) data['original_price'] = originalPrice;

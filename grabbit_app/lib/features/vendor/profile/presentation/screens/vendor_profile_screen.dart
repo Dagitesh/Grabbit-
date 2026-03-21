@@ -72,13 +72,13 @@ class VendorProfileScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: p.isApproved ? Colors.green.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
+                        color: Colors.green.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        p.isApproved ? 'Approved' : 'Pending approval',
+                        'Verified vendor',
                         style: TextStyle(
-                          color: p.isApproved ? Colors.green : Colors.orange,
+                          color: Colors.green.shade800,
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
@@ -114,12 +114,6 @@ class VendorProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            ListTile(
-              leading: const Icon(Icons.shopping_bag_outlined),
-              title: const Text('Switch to Customer view'),
-              subtitle: const Text('Browse deals and place orders'),
-              onTap: () => context.read<AuthProvider>().setViewAsRole('CUSTOMER'),
-            ),
             ListTile(
               leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
               title: Text(

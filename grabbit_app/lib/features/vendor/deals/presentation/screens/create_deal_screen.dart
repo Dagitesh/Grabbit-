@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:grabbit_app/core/api/api_service.dart';
 import 'package:grabbit_app/core/api/vendor_api_service.dart';
 import 'package:grabbit_app/core/theme/app_colors.dart';
 import 'package:grabbit_app/features/vendor/deals/providers/vendor_deal_provider.dart';
@@ -16,11 +17,31 @@ class CreateDealScreen extends StatefulWidget {
 class _CreateDealScreenState extends State<CreateDealScreen> with DealFormMixin<CreateDealScreen> {
   final List<String> _imageUrls = [];
   final _api = VendorApiService();
+  List<Map<String, dynamic>> _subcities = [];
+  List<Map<String, dynamic>> _categories = [];
+  String? _subcityId;
+  String? _categoryId;
 
   @override
   void initState() {
     super.initState();
     expiryDate = DateTime.now().add(const Duration(days: 7));
+    _loadDropdowns();
+  }
+
+  Future<void> _loadDropdowns() async {
+    try {
+      final api = ApiService();
+      final s = await api.getSubcities();
+      final c = await api.getCategories();
+      if (!mounted) return;
+      setState(() {
+        _subcities = s.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        _categories = c.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   Future<void> _addImage() async {
@@ -49,6 +70,8 @@ class _CreateDealScreenState extends State<CreateDealScreen> with DealFormMixin<
           final ok = await context.read<VendorDealProvider>().createDeal(
                 title: titleController.text.trim(),
                 description: descController.text.trim().isEmpty ? null : descController.text.trim(),
+                subcityId: _subcityId!,
+                categoryId: _categoryId!,
                 location: locationController.text.trim().isEmpty ? null : locationController.text.trim(),
                 category: categoryController.text.trim().isEmpty ? null : categoryController.text.trim(),
                 originalPrice: double.tryParse(originalPriceController.text) ?? 0,
@@ -74,6 +97,12 @@ class _CreateDealScreenState extends State<CreateDealScreen> with DealFormMixin<
         imageUrls: _imageUrls,
         onAddImage: _addImage,
         onRemoveImage: (i) => setState(() => _imageUrls.removeAt(i)),
+        subcityOptions: _subcities.isEmpty ? null : _subcities,
+        categoryOptions: _categories.isEmpty ? null : _categories,
+        selectedSubcityId: _subcityId,
+        selectedCategoryId: _categoryId,
+        onSubcityChanged: (v) => setState(() => _subcityId = v),
+        onCategoryChanged: (v) => setState(() => _categoryId = v),
       ),
     );
   }

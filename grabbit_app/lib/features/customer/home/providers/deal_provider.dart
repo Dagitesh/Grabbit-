@@ -21,6 +21,8 @@ class DealProvider with ChangeNotifier {
   String? _location;
   String? _category;
   String? _categoryId;
+  String? _subcityId;
+  bool? _urgentOnly;
   double? _minPrice;
   double? _maxPrice;
   bool _activeOnly = true;
@@ -29,6 +31,8 @@ class DealProvider with ChangeNotifier {
   String? get selectedLocation => _location;
   String? get selectedCategory => _category;
   String? get selectedCategoryId => _categoryId;
+  String? get selectedSubcityId => _subcityId;
+  bool? get urgentOnly => _urgentOnly;
   bool get loading => _loading;
   bool get loadingMore => _loadingMore;
   String? get error => _error;
@@ -55,6 +59,8 @@ class DealProvider with ChangeNotifier {
         location: _location,
         category: _category,
         categoryId: _categoryId,
+        subcityId: _subcityId,
+        urgentOnly: _urgentOnly,
         minPrice: _minPrice,
         maxPrice: _maxPrice,
         active: _activeOnly,
@@ -81,11 +87,23 @@ class DealProvider with ChangeNotifier {
     }
   }
 
-  Future<void> setFilters({String? search, String? location, String? category, String? categoryId, double? minPrice, double? maxPrice, bool? activeOnly}) async {
+  Future<void> setFilters({
+    String? search,
+    String? location,
+    String? category,
+    String? categoryId,
+    String? subcityId,
+    bool? urgentOnly,
+    double? minPrice,
+    double? maxPrice,
+    bool? activeOnly,
+  }) async {
     _search = search;
     _location = location;
     _category = category;
     _categoryId = categoryId;
+    _subcityId = subcityId;
+    _urgentOnly = urgentOnly;
     _minPrice = minPrice;
     _maxPrice = maxPrice;
     if (activeOnly != null) _activeOnly = activeOnly;
@@ -97,6 +115,8 @@ class DealProvider with ChangeNotifier {
     _location = null;
     _category = null;
     _categoryId = null;
+    _subcityId = null;
+    _urgentOnly = null;
     _minPrice = null;
     _maxPrice = null;
     _activeOnly = true;

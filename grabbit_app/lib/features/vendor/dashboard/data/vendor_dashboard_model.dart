@@ -27,7 +27,7 @@ class VendorDashboardModel {
               userId: '',
               businessName: '',
               phone: '',
-              isApproved: false,
+              isApproved: true,
             ),
       totalDeals: (stats['totalDeals'] as num?)?.toInt() ?? 0,
       activeDeals: (stats['activeDeals'] as num?)?.toInt() ?? 0,

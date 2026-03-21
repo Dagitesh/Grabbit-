@@ -36,21 +36,23 @@ class AuthApiService {
   final _dio = ApiClient().dio;
 
   Future<Map<String, dynamic>> register({
-    required String fullName,
+    required String firstName,
+    required String lastName,
     required String email,
     required String password,
-    required String role,
-    String? phone,
+    required String phone,
+    required String subcityId,
   }) async {
     try {
       final response = await _dio.post(
         ApiConstants.register,
         data: {
-          'full_name': fullName,
+          'first_name': firstName,
+          'last_name': lastName,
           'email': email,
           'password': password,
-          'role': role,
-          if (phone != null && phone.isNotEmpty) 'phone': phone,
+          'phone': phone,
+          'subcity_id': subcityId,
         },
       );
       return response.data as Map<String, dynamic>;
@@ -81,7 +83,7 @@ class AuthApiService {
     try {
       final response = await _dio.post(
         ApiConstants.verifyOtp,
-        data: {'email': email, 'otp': otp},
+        data: {'email': email, 'otpCode': otp},
       );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {

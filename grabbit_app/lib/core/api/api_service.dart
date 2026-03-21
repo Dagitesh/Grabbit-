@@ -10,7 +10,15 @@ class ApiService {
 
   Dio get _dio => ApiClient().dio;
 
-  /// GET /api/deals?page=&limit=&search=&location=&category=&categoryId=&minPrice=&maxPrice=&active=
+  /// GET /api/subcities
+  Future<List<dynamic>> getSubcities() async {
+    final response = await _dio.get(ApiConstants.subcities);
+    final data = response.data;
+    if (data is List) return data;
+    return [];
+  }
+
+  /// GET /api/deals/... filters include subcityId, urgentOnly
   Future<Map<String, dynamic>> getDeals({
     int page = 1,
     int limit = 10,
@@ -18,9 +26,11 @@ class ApiService {
     String? location,
     String? category,
     String? categoryId,
+    String? subcityId,
     double? minPrice,
     double? maxPrice,
     bool? active,
+    bool? urgentOnly,
   }) async {
     final query = <String, dynamic>{
       'page': page,
@@ -29,9 +39,11 @@ class ApiService {
       if (location != null && location.isNotEmpty) 'location': location,
       if (category != null && category.isNotEmpty) 'category': category,
       if (categoryId != null && categoryId.isNotEmpty) 'categoryId': categoryId,
+      if (subcityId != null && subcityId.isNotEmpty) 'subcityId': subcityId,
       if (minPrice != null) 'minPrice': minPrice.toString(),
       if (maxPrice != null) 'maxPrice': maxPrice.toString(),
       if (active != null) 'active': active.toString(),
+      if (urgentOnly == true) 'urgentOnly': 'true',
     };
     final response = await _dio.get(ApiConstants.deals, queryParameters: query);
     return response.data as Map<String, dynamic>;
@@ -40,6 +52,26 @@ class ApiService {
   /// GET /api/deals/:id
   Future<Map<String, dynamic>> getDeal(String id) async {
     final response = await _dio.get(ApiConstants.dealById(id));
+    return response.data as Map<String, dynamic>;
+  }
+
+  /// GET /api/deals/:id/reviews
+  Future<List<dynamic>> getDealReviews(String dealId) async {
+    final response = await _dio.get(ApiConstants.dealReviews(dealId));
+    final data = response.data;
+    if (data is List) return data;
+    return [];
+  }
+
+  /// POST /api/orders/:orderId/review
+  Future<Map<String, dynamic>> postOrderReview(String orderId, {required int rating, String? comment}) async {
+    final response = await _dio.post(
+      '${ApiConstants.orders}/$orderId/review',
+      data: {
+        'rating': rating,
+        if (comment != null && comment.isNotEmpty) 'comment': comment,
+      },
+    );
     return response.data as Map<String, dynamic>;
   }
 
