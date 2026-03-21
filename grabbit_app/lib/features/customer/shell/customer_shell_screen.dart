@@ -65,17 +65,29 @@ class _CustomerShellScreenState extends State<CustomerShellScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.receipt_long_outlined, color: _unselectedColor, size: 26),
+            icon: Icon(
+              Icons.receipt_long_outlined,
+              color: _currentIndex == _ordersIndex ? AppColors.primary : _unselectedColor,
+              size: 26,
+            ),
             activeIcon: Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 26),
             label: 'My Orders',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border, color: _unselectedColor, size: 26),
+            icon: Icon(
+              Icons.favorite_border,
+              color: _currentIndex == _favoritesIndex ? AppColors.primary : _unselectedColor,
+              size: 26,
+            ),
             activeIcon: Icon(Icons.favorite_border, color: AppColors.primary, size: 26),
             label: 'Favorites',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline, color: _unselectedColor, size: 26),
+            icon: Icon(
+              Icons.person_outline,
+              color: _currentIndex == _profileIndex ? AppColors.primary : _unselectedColor,
+              size: 26,
+            ),
             activeIcon: Icon(Icons.person_outline, color: AppColors.primary, size: 26),
             label: 'Profile',
           ),

@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/api_client.dart';
 import '../data/models/auth_response_model.dart';
-import '../data/models/user_model.dart';
 
 String _errorMessage(DioException e) {
   final data = e.response?.data;

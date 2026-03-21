@@ -65,17 +65,29 @@ class _CustomerShellState extends State<CustomerShell> {
             label: 'Explore',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.map_outlined, color: _unselectedColor, size: 26),
+            icon: Icon(
+              Icons.map_outlined,
+              color: _currentIndex == _browseIndex ? AppColors.primary : _unselectedColor,
+              size: 26,
+            ),
             activeIcon: Icon(Icons.map_outlined, color: AppColors.primary, size: 26),
             label: 'Browse',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.favorite_border, color: _unselectedColor, size: 26),
+            icon: Icon(
+              Icons.favorite_border,
+              color: _currentIndex == _favoritesIndex ? AppColors.primary : _unselectedColor,
+              size: 26,
+            ),
             activeIcon: Icon(Icons.favorite_border, color: AppColors.primary, size: 26),
             label: 'favorites',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline, color: _unselectedColor, size: 26),
+            icon: Icon(
+              Icons.person_outline,
+              color: _currentIndex == _profileIndex ? AppColors.primary : _unselectedColor,
+              size: 26,
+            ),
             activeIcon: Icon(Icons.person_outline, color: AppColors.primary, size: 26),
             label: 'Profile',
           ),
