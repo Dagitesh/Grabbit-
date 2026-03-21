@@ -37,10 +37,26 @@ const VendorProfile = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
-    is_approved: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
-      defaultValue: false,
+    owner_name: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    business_type: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+    },
+    certificate_pdf_url: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    address: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    branch_count: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 1,
     },
   },
   {

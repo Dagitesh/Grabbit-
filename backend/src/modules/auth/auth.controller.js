@@ -3,13 +3,14 @@ const authService = require('./auth.service');
 const authController = {
   async register(req, res, next) {
     try {
-      const { full_name, email, phone, password, role } = req.body;
+      const { first_name, last_name, email, phone, password, subcity_id } = req.body;
       const result = await authService.register({
-        full_name,
+        first_name,
+        last_name,
         email,
         phone,
         password,
-        role,
+        subcity_id,
       });
       res.status(201).json(result);
     } catch (err) {
@@ -29,8 +30,9 @@ const authController = {
 
   async verifyOtp(req, res, next) {
     try {
-      const { email, otp } = req.body;
-      const result = await authService.verifyOtp(email, otp);
+      const { email } = req.body;
+      const otpCode = req.body.otpCode ?? req.body.otp;
+      const result = await authService.verifyOtp(email, otpCode);
       res.json(result);
     } catch (err) {
       next(err);

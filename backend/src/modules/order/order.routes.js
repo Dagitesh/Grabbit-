@@ -5,6 +5,8 @@ const { ROLES } = require('../../config/constants');
 const Order = require('./order.model');
 const Deal = require('../deal/deal.model');
 const User = require('../user/user.model');
+const Review = require('../review/review.model');
+const { notifyVendor } = require('../../services/vendorNotify.service');
 
 const router = express.Router();
 
@@ -67,6 +69,13 @@ router.post('/orders', authenticate, authorize(ROLES.CUSTOMER), async (req, res,
     });
     const newAvail = avail - qty;
     await deal.update({ quantity_available: newAvail, available_quantity: newAvail });
+    await notifyVendor(
+      deal.vendor_id,
+      'order',
+      'New order',
+      `New order for "${deal.title}" (${qty} item(s))`,
+      { order_id: order.id, deal_id: deal.id }
+    );
     const dealPrice = deal.discount_price ?? deal.discounted_price;
     const j = order.toJSON();
     j.deal_title = deal.title;
@@ -135,14 +144,74 @@ router.patch('/orders/:id/cancel', authenticate, authorize(ROLES.CUSTOMER), asyn
       await deal.update({ quantity_available: avail, available_quantity: avail });
     }
     const j = order.toJSON();
-    j.deal_title = deal?.title ?? '';
+    j.deal_title = deal ? deal.title : '';
     j.deal_id = order.deal_id;
-    const dp = deal?.discount_price ?? deal?.discounted_price;
-    j.discounted_price = deal ? Number(dp) : null;
+    const dp = deal ? deal.discount_price ?? deal.discounted_price : null;
+    j.discounted_price = deal && dp != null ? Number(dp) : null;
     j.quantity = order.quantity;
     j.claim_code = order.claim_code;
     j.pickup_at = order.pickup_at ? new Date(order.pickup_at).toISOString() : null;
     res.json(j);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/orders/:id/review — customer rates after purchase (one review per order)
+router.post('/orders/:id/review', authenticate, authorize(ROLES.CUSTOMER), async (req, res, next) => {
+  try {
+    const { rating, comment } = req.body;
+    const ratingNum = parseInt(rating, 10);
+    if (Number.isNaN(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+      const err = new Error('rating must be an integer between 1 and 5');
+      err.statusCode = 400;
+      return next(err);
+    }
+
+    const order = await Order.findByPk(req.params.id);
+    if (!order || order.user_id !== req.user.id) {
+      const err = new Error('Order not found');
+      err.statusCode = 404;
+      return next(err);
+    }
+    if (order.status === 'Cancelled') {
+      const err = new Error('Cannot review a cancelled order');
+      err.statusCode = 400;
+      return next(err);
+    }
+
+    const existing = await Review.findOne({ where: { order_id: order.id } });
+    if (existing) {
+      const err = new Error('You already reviewed this order');
+      err.statusCode = 409;
+      return next(err);
+    }
+
+    const deal = await Deal.findByPk(order.deal_id);
+    if (!deal) {
+      const err = new Error('Deal not found');
+      err.statusCode = 404;
+      return next(err);
+    }
+
+    const review = await Review.create({
+      order_id: order.id,
+      deal_id: deal.id,
+      user_id: req.user.id,
+      vendor_id: deal.vendor_id,
+      rating: ratingNum,
+      comment: comment != null ? String(comment).trim() : null,
+    });
+
+    await notifyVendor(
+      deal.vendor_id,
+      'review',
+      'New review',
+      `${ratingNum}/5 stars on "${deal.title}"`,
+      { order_id: order.id, deal_id: deal.id, review_id: review.id }
+    );
+
+    res.status(201).json(review.toJSON());
   } catch (err) {
     next(err);
   }

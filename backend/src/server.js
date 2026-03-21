@@ -16,7 +16,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 require('./modules/user/user.model');
+require('./modules/subcity/subcity.model');
 require('./modules/vendor/vendorProfile.model');
+require('./modules/vendor/vendorBranch.model');
+require('./modules/notification/vendorNotification.model');
 require('./modules/customer/customerProfile.model');
 require('./modules/location/location.model');
 require('./modules/category/category.model');

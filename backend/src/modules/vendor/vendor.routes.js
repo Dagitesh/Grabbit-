@@ -1,9 +1,11 @@
 const express = require('express');
+const { Op } = require('sequelize');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { ROLES } = require('../../config/constants');
 const vendorProfileRepository = require('./vendorProfile.repository');
 const Deal = require('../deal/deal.model');
 const Order = require('../order/order.model');
+const VendorNotification = require('../notification/vendorNotification.model');
 
 const router = express.Router();
 
@@ -120,6 +122,54 @@ router.get('/orders', async (req, res, next) => {
       return j;
     });
     res.json(list);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/vendor/notifications
+router.get('/notifications', async (req, res, next) => {
+  try {
+    const unreadOnly = req.query.unread === 'true';
+    const where = { vendor_user_id: req.user.id };
+    if (unreadOnly) where.read_at = { [Op.is]: null };
+    const list = await VendorNotification.findAll({
+      where,
+      order: [['created_at', 'DESC']],
+      limit: Math.min(200, parseInt(req.query.limit, 10) || 100),
+    });
+    res.json(list.map((n) => n.toJSON()));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/vendor/notifications/:id/read
+router.patch('/notifications/:id/read', async (req, res, next) => {
+  try {
+    const n = await VendorNotification.findOne({
+      where: { id: req.params.id, vendor_user_id: req.user.id },
+    });
+    if (!n) {
+      const err = new Error('Notification not found');
+      err.statusCode = 404;
+      return next(err);
+    }
+    await n.update({ read_at: new Date() });
+    res.json(n.toJSON());
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/vendor/notifications/read-all
+router.patch('/notifications/read-all', async (req, res, next) => {
+  try {
+    await VendorNotification.update(
+      { read_at: new Date() },
+      { where: { vendor_user_id: req.user.id, read_at: { [Op.is]: null } } }
+    );
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }

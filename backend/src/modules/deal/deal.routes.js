@@ -2,7 +2,10 @@ const express = require('express');
 const { authenticate, authorize } = require('../../middleware/auth');
 const { ROLES } = require('../../config/constants');
 const Deal = require('./deal.model');
-const VendorProfile = require('../vendor/vendorProfile.model');
+const Subcity = require('../subcity/subcity.model');
+const Category = require('../category/category.model');
+const Review = require('../review/review.model');
+const User = require('../user/user.model');
 const { Op } = require('sequelize');
 
 const router = express.Router();
@@ -17,7 +20,54 @@ function _parseImages(val) {
   }
 }
 
-// GET /api/deals - paginated list (public or authenticated)
+function _shapeDeal(j) {
+  const expiryVal = j.expiry_time ?? j.expiry_date;
+  j.expiry_date = expiryVal ? new Date(expiryVal).toISOString().slice(0, 10) : j.expiry_date;
+  j.expiry_time = expiryVal ? new Date(expiryVal).toISOString() : j.expiry_time;
+  j.original_price = Number(j.original_price);
+  j.discounted_price = Number(j.discount_price ?? j.discounted_price);
+  j.quantity_available = j.available_quantity ?? j.quantity_available;
+  j.images = _parseImages(j.images);
+  return j;
+}
+
+// GET /api/subcities — Addis Ababa subcities (dropdown)
+router.get('/subcities', async (req, res, next) => {
+  try {
+    const rows = await Subcity.findAll({ order: [['sort_order', 'ASC'], ['name', 'ASC']] });
+    res.json(rows.map((s) => s.toJSON()));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/deals/:dealId/reviews — public reviews for a deal
+router.get('/deals/:dealId/reviews', async (req, res, next) => {
+  try {
+    const deal = await Deal.findByPk(req.params.dealId);
+    if (!deal) {
+      const err = new Error('Deal not found');
+      err.statusCode = 404;
+      return next(err);
+    }
+    const reviews = await Review.findAll({
+      where: { deal_id: deal.id },
+      order: [['created_at', 'DESC']],
+      include: [{ model: User, as: 'reviewer', attributes: ['id', 'full_name'] }],
+    });
+    res.json(
+      reviews.map((r) => {
+        const j = r.toJSON();
+        j.reviewer_name = j.reviewer?.full_name ?? 'Customer';
+        return j;
+      })
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/deals - filters: subcityId, categoryId, minPrice, maxPrice, urgentOnly, search, active
 router.get('/deals', async (req, res, next) => {
   try {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
@@ -27,13 +77,18 @@ router.get('/deals', async (req, res, next) => {
     const location = (req.query.location || '').trim();
     const category = (req.query.category || '').trim();
     const categoryId = (req.query.categoryId || req.query.category_id || '').trim();
+    const subcityId = (req.query.subcityId || req.query.subcity_id || '').trim();
     const minPrice = req.query.minPrice != null ? parseFloat(req.query.minPrice) : null;
     const maxPrice = req.query.maxPrice != null ? parseFloat(req.query.maxPrice) : null;
     const activeOnly = req.query.active === 'true';
+    const urgentOnly = req.query.urgentOnly === 'true' || req.query.urgent === 'true';
 
     const where = {};
     if (location) {
       where.location = { [Op.iLike]: `%${location}%` };
+    }
+    if (subcityId) {
+      where.subcity_id = subcityId;
     }
     if (categoryId) {
       where.category_id = categoryId;
@@ -54,7 +109,20 @@ router.get('/deals', async (req, res, next) => {
       where.discounted_price = where.discounted_price || {};
       where.discounted_price[Op.lte] = maxPrice;
     }
+
     let queryWhere = where;
+    if (urgentOnly) {
+      const now = new Date();
+      const weekAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const urgentClause = {
+        [Op.or]: [
+          { expiry_time: { [Op.and]: [{ [Op.gte]: now }, { [Op.lte]: weekAhead }] } },
+          { expiry_date: { [Op.and]: [{ [Op.gte]: now }, { [Op.lte]: weekAhead }] } },
+        ],
+      };
+      queryWhere = { [Op.and]: [{ ...where }, urgentClause] };
+    }
+
     if (activeOnly) {
       const expiryOr = {
         [Op.or]: [
@@ -62,7 +130,7 @@ router.get('/deals', async (req, res, next) => {
           { expiry_date: { [Op.gte]: new Date() } },
         ],
       };
-      queryWhere = { [Op.and]: [{ ...where }, { is_active: true }, expiryOr] };
+      queryWhere = { [Op.and]: [{ ...queryWhere }, { is_active: true }, expiryOr] };
     }
 
     const { count, rows } = await Deal.findAndCountAll({
@@ -72,17 +140,7 @@ router.get('/deals', async (req, res, next) => {
       order: [['created_at', 'DESC']],
     });
 
-    const list = rows.map((d) => {
-      const j = d.toJSON();
-      const expiryVal = j.expiry_time ?? j.expiry_date;
-      j.expiry_date = expiryVal ? new Date(expiryVal).toISOString().slice(0, 10) : j.expiry_date;
-      j.expiry_time = expiryVal ? new Date(expiryVal).toISOString() : j.expiry_time;
-      j.original_price = Number(j.original_price);
-      j.discounted_price = Number(j.discount_price ?? j.discounted_price);
-      j.quantity_available = j.available_quantity ?? j.quantity_available;
-      j.images = _parseImages(j.images);
-      return j;
-    });
+    const list = rows.map((d) => _shapeDeal(d.toJSON()));
 
     const totalPages = Math.ceil(count / limit) || 1;
     res.json({
@@ -109,34 +167,18 @@ router.get('/deals/:id', async (req, res, next) => {
       err.statusCode = 404;
       return next(err);
     }
-    const j = deal.toJSON();
-    const expiryVal = j.expiry_time ?? j.expiry_date;
-    j.expiry_date = expiryVal ? new Date(expiryVal).toISOString().slice(0, 10) : j.expiry_date;
-    j.expiry_time = expiryVal ? new Date(expiryVal).toISOString() : j.expiry_time;
-    j.original_price = Number(j.original_price);
-    j.discounted_price = Number(j.discount_price ?? j.discounted_price);
-    j.quantity_available = j.available_quantity ?? j.quantity_available;
-    j.images = _parseImages(j.images);
-    res.json(j);
+    res.json(_shapeDeal(deal.toJSON()));
   } catch (err) {
     next(err);
   }
 });
 
-// POST /api/deals - vendor only (must be approved)
+// POST /api/deals — vendor only (onboarded by admin)
 router.post('/deals', authenticate, authorize(ROLES.VENDOR), async (req, res, next) => {
   try {
-    const vendorProfile = await VendorProfile.findOne({ where: { user_id: req.user.id } });
-    if (!vendorProfile || !vendorProfile.is_approved) {
-      const err = new Error('Your vendor account is pending approval. You cannot create deals until an admin approves your account.');
-      err.statusCode = 403;
-      return next(err);
-    }
     const {
       title,
       description,
-      location,
-      category,
       images,
       original_price,
       discounted_price,
@@ -149,13 +191,36 @@ router.post('/deals', authenticate, authorize(ROLES.VENDOR), async (req, res, ne
       start_time,
       location_id,
       category_id,
+      subcity_id,
     } = req.body;
+
+    if (!subcity_id || !category_id) {
+      const err = new Error('subcity_id and category_id are required');
+      err.statusCode = 400;
+      return next(err);
+    }
+
+    const subcity = await Subcity.findByPk(subcity_id);
+    if (!subcity) {
+      const err = new Error('Invalid subcity_id');
+      err.statusCode = 400;
+      return next(err);
+    }
+    const cat = await Category.findByPk(category_id);
+    if (!cat) {
+      const err = new Error('Invalid category_id');
+      err.statusCode = 400;
+      return next(err);
+    }
+
     const price = discount_price ?? discounted_price;
     const qty = available_quantity ?? quantity_available;
     const total = total_quantity ?? qty;
     const expiryVal = expiry_time ?? expiry_date;
     if (!title || original_price == null || price == null || (qty == null && total == null) || !expiryVal) {
-      const err = new Error('Missing required fields: title, original_price, discount_price (or discounted_price), quantity (available/total), expiry (expiry_time or expiry_date)');
+      const err = new Error(
+        'Missing required fields: title, original_price, discount_price, quantity, expiry (expiry_time or expiry_date)'
+      );
       err.statusCode = 400;
       return next(err);
     }
@@ -178,17 +243,18 @@ router.post('/deals', authenticate, authorize(ROLES.VENDOR), async (req, res, ne
       err.statusCode = 400;
       return next(err);
     }
-    const imagesJson = Array.isArray(images) && images.length > 0
-      ? JSON.stringify(images.map((u) => String(u)))
-      : null;
+    const imagesJson =
+      Array.isArray(images) && images.length > 0 ? JSON.stringify(images.map((u) => String(u))) : null;
+
     const deal = await Deal.create({
       vendor_id: req.user.id,
       location_id: location_id || null,
-      category_id: category_id || null,
+      category_id,
+      subcity_id,
       title: String(title).trim(),
       description: description != null ? String(description).trim() : null,
-      location: location != null ? String(location).trim() || null : null,
-      category: category != null ? String(category).trim() || null : null,
+      location: subcity.name,
+      category: cat.name,
       images: imagesJson,
       original_price: parseFloat(original_price),
       discounted_price: parseFloat(price),
@@ -201,14 +267,7 @@ router.post('/deals', authenticate, authorize(ROLES.VENDOR), async (req, res, ne
       expiry_time: expiry,
       is_active: true,
     });
-    const j = deal.toJSON();
-    const expiryValJson = j.expiry_time ?? j.expiry_date;
-    j.expiry_date = expiryValJson ? new Date(expiryValJson).toISOString().slice(0, 10) : j.expiry_date;
-    j.original_price = Number(j.original_price);
-    j.discounted_price = Number(j.discount_price ?? j.discounted_price);
-    j.quantity_available = j.available_quantity ?? j.quantity_available;
-    j.images = _parseImages(j.images);
-    res.status(201).json(j);
+    res.status(201).json(_shapeDeal(deal.toJSON()));
   } catch (err) {
     next(err);
   }
@@ -253,10 +312,21 @@ router.put('/deals/:id', authenticate, authorize(ROLES.VENDOR), async (req, res,
     if (category !== undefined) updates.category = category ? String(category).trim() : null;
     if (location_id !== undefined) updates.location_id = location_id || null;
     if (req.body.category_id !== undefined) updates.category_id = req.body.category_id || null;
+    if (req.body.subcity_id !== undefined) {
+      const sc = await Subcity.findByPk(req.body.subcity_id);
+      if (!sc) {
+        const err = new Error('Invalid subcity_id');
+        err.statusCode = 400;
+        return next(err);
+      }
+      updates.subcity_id = req.body.subcity_id;
+      updates.location = sc.name;
+    }
     if (images !== undefined) {
-      updates.images = Array.isArray(images) && images.length > 0
-        ? JSON.stringify(images.map((u) => String(u)))
-        : null;
+      updates.images =
+        Array.isArray(images) && images.length > 0
+          ? JSON.stringify(images.map((u) => String(u)))
+          : null;
     }
     if (original_price !== undefined) updates.original_price = parseFloat(original_price);
     const price = discount_price ?? discounted_price;
@@ -285,13 +355,7 @@ router.put('/deals/:id', authenticate, authorize(ROLES.VENDOR), async (req, res,
     if (typeof is_active === 'boolean') updates.is_active = is_active;
     await deal.update(updates);
     const j = (await Deal.findByPk(deal.id)).toJSON();
-    const expiryVal2 = j.expiry_time ?? j.expiry_date;
-    j.expiry_date = expiryVal2 ? new Date(expiryVal2).toISOString().slice(0, 10) : j.expiry_date;
-    j.original_price = Number(j.original_price);
-    j.discounted_price = Number(j.discount_price ?? j.discounted_price);
-    j.quantity_available = j.available_quantity ?? j.quantity_available;
-    j.images = _parseImages(j.images);
-    res.json(j);
+    res.json(_shapeDeal(j));
   } catch (err) {
     next(err);
   }

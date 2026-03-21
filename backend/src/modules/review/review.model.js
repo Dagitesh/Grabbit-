@@ -16,6 +16,24 @@ const Review = sequelize.define(
       references: { model: 'orders', key: 'id' },
       onDelete: 'RESTRICT',
     },
+    deal_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: { model: 'deals', key: 'id' },
+      onDelete: 'CASCADE',
+    },
+    user_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: { model: 'users', key: 'id' },
+      onDelete: 'SET NULL',
+    },
+    vendor_id: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: { model: 'users', key: 'id' },
+      onDelete: 'CASCADE',
+    },
     rating: {
       type: DataTypes.SMALLINT,
       allowNull: false,

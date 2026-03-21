@@ -1,28 +1,19 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../../config/database');
 
-const CustomerProfile = sequelize.define(
-  'CustomerProfile',
+const VendorBranch = sequelize.define(
+  'VendorBranch',
   {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    user_id: {
+    vendor_profile_id: {
       type: DataTypes.UUID,
       allowNull: false,
-      unique: true,
-      references: { model: 'users', key: 'id' },
-      onDelete: 'RESTRICT',
-    },
-    first_name: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-    },
-    last_name: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
+      references: { model: 'vendor_profiles', key: 'id' },
+      onDelete: 'CASCADE',
     },
     subcity_id: {
       type: DataTypes.UUID,
@@ -30,13 +21,18 @@ const CustomerProfile = sequelize.define(
       references: { model: 'subcities', key: 'id' },
       onDelete: 'SET NULL',
     },
-    saved_preferences: {
-      type: DataTypes.TEXT,
+    address_detail: {
+      type: DataTypes.STRING(500),
       allowNull: true,
+    },
+    sort_order: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
     },
   },
   {
-    tableName: 'customer_profiles',
+    tableName: 'vendor_branches',
     underscored: true,
     timestamps: true,
     createdAt: 'created_at',
@@ -44,4 +40,4 @@ const CustomerProfile = sequelize.define(
   }
 );
 
-module.exports = CustomerProfile;
+module.exports = VendorBranch;
