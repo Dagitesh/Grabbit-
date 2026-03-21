@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:grabbit_app/core/api/api_service.dart';
 import '../providers/auth_provider.dart';
 import 'otp_verification_screen.dart';
 
+/// Customer-only registration (first/last name, email, phone, Addis subcity, password).
+/// Vendors are onboarded by Grabbit admin, not self-serve.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -12,18 +15,40 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _fullNameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _phoneController = TextEditingController();
-  String _selectedRole = 'CUSTOMER';
   bool _obscurePassword = true;
   bool _loading = false;
   String? _errorMessage;
+  List<Map<String, dynamic>> _subcities = [];
+  String? _subcityId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSubcities();
+  }
+
+  Future<void> _loadSubcities() async {
+    try {
+      final api = ApiService();
+      final list = await api.getSubcities();
+      if (!mounted) return;
+      setState(() {
+        _subcities = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      });
+    } catch (_) {
+      /* backend may be down */
+    }
+  }
 
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _phoneController.dispose();
@@ -39,36 +64,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _loading = false);
       return;
     }
+    if (_subcityId == null || _subcityId!.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please select your subcity (Addis Ababa).';
+        _loading = false;
+      });
+      return;
+    }
     try {
       await context.read<AuthProvider>().register(
-            fullName: _fullNameController.text.trim(),
+            firstName: _firstNameController.text.trim(),
+            lastName: _lastNameController.text.trim(),
             email: _emailController.text.trim(),
             password: _passwordController.text,
-            role: _selectedRole,
-            phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+            phone: _phoneController.text.trim(),
+            subcityId: _subcityId!,
           );
       if (!mounted) return;
-      if (_selectedRole == 'VENDOR') {
-        await showDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Text('Thank you!'),
-            content: const Text(
-              'Thank you for registering as a vendor!\n\n'
-              'Our team will review your application and reach out to you soon.\n\n'
-              'In the meantime, you can log in or register as a customer to explore Grabbit\'s services.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-        if (!mounted) return;
-      }
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => OTPVerificationScreen(email: _emailController.text.trim()),
@@ -105,7 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign up to get started with Grabbit',
+                  'Customer sign up — vendors are registered by Grabbit after verification.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -126,16 +138,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 16),
                 ],
                 TextFormField(
-                  controller: _fullNameController,
+                  controller: _firstNameController,
                   decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    hintText: 'John Doe',
+                    labelText: 'First name',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.person_outline),
                   ),
                   textInputAction: TextInputAction.next,
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Full name is required';
+                    if (v == null || v.trim().isEmpty) return 'First name is required';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _lastNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Last name',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Last name is required';
                     return null;
                   },
                 ),
@@ -161,11 +186,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
                   decoration: const InputDecoration(
-                    labelText: 'Phone (optional)',
+                    labelText: 'Phone number',
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.phone_outlined),
                   ),
                   textInputAction: TextInputAction.next,
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Phone number is required';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _subcityId,
+                  decoration: const InputDecoration(
+                    labelText: 'Subcity (Addis Ababa)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.location_city_outlined),
+                  ),
+                  items: _subcities
+                      .map(
+                        (e) => DropdownMenuItem<String>(
+                          value: e['id'] as String?,
+                          child: Text(e['name'] as String? ?? ''),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => _subcityId = v),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Select your subcity' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -188,20 +236,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (v.length < 6) return 'Password must be at least 6 characters';
                     return null;
                   },
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _selectedRole,
-                  decoration: const InputDecoration(
-                    labelText: 'Role',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.badge_outlined),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'CUSTOMER', child: Text('Customer')),
-                    DropdownMenuItem(value: 'VENDOR', child: Text('Vendor')),
-                  ],
-                  onChanged: (v) => setState(() => _selectedRole = v ?? 'CUSTOMER'),
                 ),
                 const SizedBox(height: 24),
                 FilledButton(

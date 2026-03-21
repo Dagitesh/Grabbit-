@@ -27,7 +27,7 @@ class VendorProfileModel {
       businessDescription: json['business_description'] as String?,
       phone: json['phone'] as String,
       location: json['location'] as String?,
-      isApproved: json['is_approved'] as bool? ?? false,
+      isApproved: json['is_approved'] as bool? ?? true,
       tin: json['tin'] as String?,
     );
   }

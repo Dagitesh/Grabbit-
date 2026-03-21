@@ -41,6 +41,8 @@ class VendorDealProvider with ChangeNotifier {
   Future<DealModel?> createDeal({
     required String title,
     String? description,
+    required String subcityId,
+    required String categoryId,
     String? location,
     String? category,
     required double originalPrice,
@@ -57,6 +59,8 @@ class VendorDealProvider with ChangeNotifier {
       final data = await _api.createDeal(
         title: title,
         description: description,
+        subcityId: subcityId,
+        categoryId: categoryId,
         location: location,
         category: category,
         originalPrice: originalPrice,

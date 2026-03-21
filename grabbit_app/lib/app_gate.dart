@@ -47,7 +47,7 @@ class _AppGateState extends State<AppGate> {
       return const LoginScreen();
     }
 
-    final effectiveRole = (auth.viewAsRole ?? user?.role ?? '').toUpperCase();
+    final effectiveRole = (user?.role ?? '').toUpperCase();
     if (effectiveRole == 'VENDOR') {
       return const VendorShellScreen();
     }

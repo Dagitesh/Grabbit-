@@ -67,6 +67,12 @@ mixin DealFormMixin<T extends StatefulWidget> on State<T> {
     List<String> imageUrls = const [],
     Future<void> Function()? onAddImage,
     void Function(int)? onRemoveImage,
+    List<Map<String, dynamic>>? subcityOptions,
+    List<Map<String, dynamic>>? categoryOptions,
+    String? selectedSubcityId,
+    String? selectedCategoryId,
+    ValueChanged<String?>? onSubcityChanged,
+    ValueChanged<String?>? onCategoryChanged,
   }) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -146,23 +152,64 @@ mixin DealFormMixin<T extends StatefulWidget> on State<T> {
               ),
               const SizedBox(height: 16),
             ],
-            TextFormField(
-              controller: locationController,
-              decoration: const InputDecoration(
-                labelText: 'Location',
-                hintText: 'e.g. Addis Ababa area or store address',
-                border: OutlineInputBorder(),
+            if (subcityOptions != null &&
+                categoryOptions != null &&
+                onSubcityChanged != null &&
+                onCategoryChanged != null) ...[
+              DropdownButtonFormField<String>(
+                value: selectedSubcityId,
+                decoration: const InputDecoration(
+                  labelText: 'Subcity (Addis Ababa)',
+                  border: OutlineInputBorder(),
+                ),
+                items: subcityOptions
+                    .map(
+                      (e) => DropdownMenuItem<String>(
+                        value: e['id'] as String,
+                        child: Text(e['name'] as String? ?? ''),
+                      ),
+                    )
+                    .toList(),
+                onChanged: onSubcityChanged,
+                validator: (v) => (v == null || v.isEmpty) ? 'Select a subcity' : null,
               ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                hintText: 'e.g. Bakery, Veggies, Meals, Dairy, Meat',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: selectedCategoryId,
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  border: OutlineInputBorder(),
+                ),
+                items: categoryOptions
+                    .map(
+                      (e) => DropdownMenuItem<String>(
+                        value: e['id'] as String,
+                        child: Text(e['name'] as String? ?? ''),
+                      ),
+                    )
+                    .toList(),
+                onChanged: onCategoryChanged,
+                validator: (v) => (v == null || v.isEmpty) ? 'Select a category' : null,
               ),
-            ),
+            ] else ...[
+              TextFormField(
+                controller: locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  hintText: 'e.g. Addis Ababa area or store address',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: categoryController,
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  hintText: 'e.g. Meat, Vegan, Pastries',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             TextFormField(
               controller: originalPriceController,

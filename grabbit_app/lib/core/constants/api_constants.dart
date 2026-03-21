@@ -1,15 +1,16 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 
 class ApiConstants {
   ApiConstants._();
 
-  /// Web: use localhost. Android emulator: 10.0.2.2. Override with --dart-define=API_BASE_URL=...
+  /// Release builds → Render. Debug → localhost/emulator. Override with --dart-define=API_BASE_URL=...
   static String get baseUrl {
     const fromEnv = String.fromEnvironment(
       'API_BASE_URL',
       defaultValue: '',
     );
     if (fromEnv.isNotEmpty) return fromEnv;
+    if (kReleaseMode) return 'https://grabbit-1.onrender.com';
     if (kIsWeb) return 'http://localhost:3000';
     return 'http://10.0.2.2:3000'; // Android emulator
   }
@@ -19,8 +20,10 @@ class ApiConstants {
   static const String verifyOtp = '/api/auth/verify-otp';
   static const String refreshToken = '/api/auth/refresh-token';
 
+  static const String subcities = '/api/subcities';
   static const String deals = '/api/deals';
   static String dealById(String id) => '/api/deals/$id';
+  static String dealReviews(String dealId) => '/api/deals/$dealId/reviews';
   static const String orders = '/api/orders';
   static String orderById(String id) => '/api/orders/$id';
   static String cancelOrder(String id) => '/api/orders/$id/cancel';
@@ -31,6 +34,7 @@ class ApiConstants {
   static const String vendorDashboard = '/api/vendor/dashboard';
   static const String vendorDeals = '/api/vendor/deals';
   static const String vendorOrders = '/api/vendor/orders';
+  static const String vendorNotifications = '/api/vendor/notifications';
 
   static const String categories = '/api/admin/categories';
   static String categoryById(String id) => '/api/admin/categories/$id';
@@ -39,4 +43,6 @@ class ApiConstants {
   static const String adminVendorsPending = '/api/admin/vendors/pending';
   static String adminVendorApprove(String userId) => '/api/admin/vendors/$userId/approve';
   static String adminVendorReject(String userId) => '/api/admin/vendors/$userId/reject';
+  static const String adminVendorRegister = '/api/admin/vendors/register';
+  static const String adminVendors = '/api/admin/vendors';
 }

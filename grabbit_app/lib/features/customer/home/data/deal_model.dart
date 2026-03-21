@@ -18,6 +18,8 @@ class DealModel {
     this.totalQuantity,
     this.startTime,
     this.expiryTime,
+    this.subcityId,
+    this.categoryId,
   });
 
   final String id;
@@ -36,6 +38,8 @@ class DealModel {
   final int? totalQuantity;
   final DateTime? startTime;
   final DateTime? expiryTime;
+  final String? subcityId;
+  final String? categoryId;
 
   double get discountPercent {
     if (originalPrice <= 0) return 0;
@@ -78,6 +82,8 @@ class DealModel {
       totalQuantity: (json['total_quantity'] as num?)?.toInt(),
       startTime: startTimeRaw != null ? DateTime.parse(startTimeRaw as String) : null,
       expiryTime: json['expiry_time'] != null ? DateTime.parse(json['expiry_time'] as String) : null,
+      subcityId: json['subcity_id'] as String?,
+      categoryId: json['category_id'] as String?,
     );
   }
 
@@ -98,6 +104,8 @@ class DealModel {
         'images': images,
         'location_id': locationId,
         'total_quantity': totalQuantity,
+        'subcity_id': subcityId,
+        'category_id': categoryId,
       };
 
   static double _toDouble(dynamic v) {

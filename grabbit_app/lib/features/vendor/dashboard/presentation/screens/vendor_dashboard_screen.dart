@@ -58,9 +58,9 @@ class VendorDashboardScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            d.vendor.isApproved ? 'Approved' : 'Pending approval',
+            'Verified vendor',
             style: TextStyle(
-              color: d.vendor.isApproved ? Colors.green : Colors.orange,
+              color: Colors.green.shade800,
               fontWeight: FontWeight.w600,
             ),
           ),
