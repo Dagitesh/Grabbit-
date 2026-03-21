@@ -7,18 +7,9 @@ const Category = require('../category/category.model');
 const Review = require('../review/review.model');
 const User = require('../user/user.model');
 const { Op } = require('sequelize');
+const { parseDealImages } = require('../../utils/parseDealImages');
 
 const router = express.Router();
-
-function _parseImages(val) {
-  if (!val) return [];
-  if (Array.isArray(val)) return val;
-  try {
-    return JSON.parse(val) || [];
-  } catch (_) {
-    return [];
-  }
-}
 
 function _shapeDeal(j) {
   const expiryVal = j.expiry_time ?? j.expiry_date;
@@ -27,7 +18,17 @@ function _shapeDeal(j) {
   j.original_price = Number(j.original_price);
   j.discounted_price = Number(j.discount_price ?? j.discounted_price);
   j.quantity_available = j.available_quantity ?? j.quantity_available;
-  j.images = _parseImages(j.images);
+  j.images = parseDealImages(j.images);
+  return j;
+}
+
+/** Public listings must not expose internal moderation fields. */
+function _stripModerationForPublic(j) {
+  if (!j || typeof j !== 'object') return j;
+  delete j.removed_by_admin;
+  delete j.admin_removal_reason_code;
+  delete j.admin_removal_reason_label;
+  delete j.admin_removed_at;
   return j;
 }
 
@@ -45,7 +46,7 @@ router.get('/subcities', async (req, res, next) => {
 router.get('/deals/:dealId/reviews', async (req, res, next) => {
   try {
     const deal = await Deal.findByPk(req.params.dealId);
-    if (!deal) {
+    if (!deal || deal.removed_by_admin) {
       const err = new Error('Deal not found');
       err.statusCode = 404;
       return next(err);
@@ -133,6 +134,8 @@ router.get('/deals', async (req, res, next) => {
       queryWhere = { [Op.and]: [{ ...queryWhere }, { is_active: true }, expiryOr] };
     }
 
+    queryWhere = { [Op.and]: [{ ...queryWhere }, { removed_by_admin: false }] };
+
     const { count, rows } = await Deal.findAndCountAll({
       where: queryWhere,
       limit,
@@ -140,7 +143,7 @@ router.get('/deals', async (req, res, next) => {
       order: [['created_at', 'DESC']],
     });
 
-    const list = rows.map((d) => _shapeDeal(d.toJSON()));
+    const list = rows.map((d) => _stripModerationForPublic(_shapeDeal(d.toJSON())));
 
     const totalPages = Math.ceil(count / limit) || 1;
     res.json({
@@ -162,12 +165,12 @@ router.get('/deals', async (req, res, next) => {
 router.get('/deals/:id', async (req, res, next) => {
   try {
     const deal = await Deal.findByPk(req.params.id);
-    if (!deal) {
+    if (!deal || deal.removed_by_admin) {
       const err = new Error('Deal not found');
       err.statusCode = 404;
       return next(err);
     }
-    res.json(_shapeDeal(deal.toJSON()));
+    res.json(_stripModerationForPublic(_shapeDeal(deal.toJSON())));
   } catch (err) {
     next(err);
   }
@@ -284,6 +287,11 @@ router.put('/deals/:id', authenticate, authorize(ROLES.VENDOR), async (req, res,
     }
     if (deal.vendor_id !== req.user.id) {
       const err = new Error('Forbidden');
+      err.statusCode = 403;
+      return next(err);
+    }
+    if (deal.removed_by_admin) {
+      const err = new Error('This deal was removed by a moderator and cannot be edited');
       err.statusCode = 403;
       return next(err);
     }

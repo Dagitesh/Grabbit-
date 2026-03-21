@@ -98,6 +98,23 @@ const Deal = sequelize.define(
       allowNull: true,
       comment: 'JSON array of image URLs',
     },
+    removed_by_admin: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    admin_removal_reason_code: {
+      type: DataTypes.STRING(64),
+      allowNull: true,
+    },
+    admin_removal_reason_label: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    admin_removed_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: 'deals',

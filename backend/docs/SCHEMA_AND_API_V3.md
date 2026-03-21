@@ -6,6 +6,7 @@ Run on PostgreSQL **after** `001` / `002`:
 
 ```bash
 psql $DATABASE_URL -f migrations/003_addis_subcities_vendor_customer_reviews.sql
+psql $DATABASE_URL -f migrations/004_deal_admin_moderation.sql
 ```
 
 Then seed subcities + categories:
@@ -20,9 +21,9 @@ npm run db:seed
 - **`customer_profiles`**: `first_name`, `last_name`, `subcity_id`, `saved_preferences`.
 - **`vendor_profiles`**: `owner_name`, `business_type`, `certificate_pdf_url`, `address`, `branch_count`. **`is_approved` removed** (no separate verification flag).
 - **`vendor_branches`**: optional rows per vendor (`subcity_id`, `address_detail`).
-- **`deals`**: `subcity_id` (required on create via API).
+- **`deals`**: `subcity_id` (required on create via API). **Moderation:** `removed_by_admin`, `admin_removal_reason_code`, `admin_removal_reason_label`, `admin_removed_at` — admin removal with preset reason; public listings hide removed deals.
 - **`reviews`**: `deal_id`, `user_id`, `vendor_id` (denormalized for listing + notifications).
-- **`vendor_notifications`**: in-app feed for vendors (`order`, `review`).
+- **`vendor_notifications`**: in-app feed for vendors (`order`, `review`, `deal_removed`).
 
 ## Auth
 
@@ -32,7 +33,7 @@ npm run db:seed
 ## Public
 
 - **`GET /api/subcities`**
-- **`GET /api/deals`**: query `subcityId`, `categoryId`, `minPrice`, `maxPrice`, `urgentOnly=true` (expires within 7 days), `active`, `search`, …
+- **`GET /api/deals`**: query `subcityId`, `categoryId`, `minPrice`, `maxPrice`, `urgentOnly=true` (expires within 7 days), `active`, `search`, … — **excludes** deals removed by admin.
 - **`GET /api/deals/:dealId/reviews`**
 
 ## Admin (JWT role `ADMIN`)
@@ -43,6 +44,9 @@ npm run db:seed
   - `branches` — JSON string array: `[{ "subcity_id": "uuid", "address_detail": "..." }]`
 - **`GET /api/admin/vendors`** — list vendors + branches
 - **`GET /api/admin/vendors/pending`** — returns `[]` (legacy endpoint)
+- **`GET /api/admin/deal-moderation-reasons`** — preset `{ code, label }[]` for removal dropdown
+- **`GET /api/admin/deals`** — `?page=&limit=&search=&includeRemoved=true` — list deals with parsed `images`, `vendor`, `category_name`, `subcity_name`
+- **`POST /api/admin/deals/:id/remove`** — body `{ "reason_code": "MISLEADING" }` — sets `removed_by_admin`, deactivates deal, creates vendor notification `deal_removed`
 
 ## Vendor
 
