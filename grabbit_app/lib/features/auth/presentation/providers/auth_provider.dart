@@ -79,8 +79,10 @@ class AuthProvider with ChangeNotifier {
     await setAuthFromLogin(res.user, res.accessToken, res.refreshToken);
   }
 
-  Future<Map<String, dynamic>> verifyOtp({required String email, required String otp}) async {
-    return _api.verifyOtp(email: email, otp: otp);
+  /// Completes phone verification and signs the user in (same tokens as login).
+  Future<void> verifyOtpAndSignIn({required String phone, required String otp}) async {
+    final res = await _api.verifyOtp(phone: phone, otp: otp);
+    await setAuthFromLogin(res.user, res.accessToken, res.refreshToken);
   }
 
   Future<void> logout() async {

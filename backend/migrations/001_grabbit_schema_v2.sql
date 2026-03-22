@@ -15,7 +15,22 @@ END $$;
 
 -- Email unique is typically already from Sequelize
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'users_email_key') THEN ALTER TABLE users ADD CONSTRAINT users_email_key UNIQUE (email); END IF; END $$;
--- Phone unique (multiple NULLs allowed)
+
+-- Phone unique (multiple NULLs allowed). Clear duplicate phones first so the index can be created.
+-- Keeps one row per phone (earliest created_at, then smallest id); sets phone = NULL on duplicate rows.
+UPDATE users u
+SET phone = NULL
+FROM (
+  SELECT id,
+         ROW_NUMBER() OVER (
+           PARTITION BY phone
+           ORDER BY created_at ASC NULLS LAST, id ASC
+         ) AS rn
+  FROM users
+  WHERE phone IS NOT NULL
+) ranked
+WHERE u.id = ranked.id AND ranked.rn > 1;
+
 CREATE UNIQUE INDEX IF NOT EXISTS users_phone_key ON users (phone) WHERE phone IS NOT NULL;
 
 -- =============================================================================
@@ -90,19 +105,61 @@ END $$;
 -- Ensure NOT NULL and defaults for new schema
 ALTER TABLE deals ALTER COLUMN total_quantity SET DEFAULT 0;
 ALTER TABLE deals ALTER COLUMN available_quantity SET DEFAULT 0;
-UPDATE deals SET total_quantity = COALESCE(total_quantity, 0), available_quantity = COALESCE(available_quantity, 0), discount_price = COALESCE(discount_price, discounted_price, 0), expiry_time = COALESCE(expiry_time, expiry_date, created_at), start_time = COALESCE(start_time, created_at) WHERE total_quantity IS NULL OR available_quantity IS NULL OR discount_price IS NULL OR expiry_time IS NULL OR start_time IS NULL;
 
--- CHECK constraints (after backfill, discount_price is set)
+-- Backfill nullable fields without referencing legacy column names that may not exist on all DBs
+UPDATE deals SET total_quantity = COALESCE(total_quantity, 0) WHERE total_quantity IS NULL;
+UPDATE deals SET available_quantity = COALESCE(available_quantity, 0) WHERE available_quantity IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'deals' AND column_name = 'discounted_price'
+  ) THEN
+    UPDATE deals SET discount_price = COALESCE(discount_price, discounted_price, 0) WHERE discount_price IS NULL;
+  ELSE
+    UPDATE deals SET discount_price = COALESCE(discount_price, 0) WHERE discount_price IS NULL;
+  END IF;
+END $$;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'deals' AND column_name = 'expiry_date'
+  ) THEN
+    UPDATE deals SET expiry_time = COALESCE(expiry_time, expiry_date, created_at) WHERE expiry_time IS NULL;
+  ELSE
+    UPDATE deals SET expiry_time = COALESCE(expiry_time, created_at) WHERE expiry_time IS NULL;
+  END IF;
+END $$;
+UPDATE deals SET start_time = COALESCE(start_time, created_at) WHERE start_time IS NULL;
+
+-- CHECK constraints (NOT VALID = do not scan existing rows; avoids failing on legacy bad data)
 ALTER TABLE deals DROP CONSTRAINT IF EXISTS chk_discount_lt_original;
-ALTER TABLE deals ADD CONSTRAINT chk_discount_lt_original CHECK (
-  (COALESCE(discount_price, discounted_price) < original_price)
-);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'deals' AND column_name = 'discounted_price'
+  ) THEN
+    EXECUTE $c$
+      ALTER TABLE deals ADD CONSTRAINT chk_discount_lt_original CHECK (
+        (COALESCE(discount_price, discounted_price) < original_price)
+      ) NOT VALID
+    $c$;
+  ELSE
+    EXECUTE $c$
+      ALTER TABLE deals ADD CONSTRAINT chk_discount_lt_original CHECK (
+        (discount_price < original_price)
+      ) NOT VALID
+    $c$;
+  END IF;
+END $$;
 
 ALTER TABLE deals DROP CONSTRAINT IF EXISTS chk_available_lte_total;
-ALTER TABLE deals ADD CONSTRAINT chk_available_lte_total CHECK (total_quantity IS NULL OR available_quantity IS NULL OR (available_quantity <= total_quantity));
+ALTER TABLE deals ADD CONSTRAINT chk_available_lte_total CHECK (total_quantity IS NULL OR available_quantity IS NULL OR (available_quantity <= total_quantity)) NOT VALID;
 
 ALTER TABLE deals DROP CONSTRAINT IF EXISTS chk_expiry_after_start;
-ALTER TABLE deals ADD CONSTRAINT chk_expiry_after_start CHECK (start_time IS NULL OR expiry_time IS NULL OR (expiry_time > start_time));
+ALTER TABLE deals ADD CONSTRAINT chk_expiry_after_start CHECK (start_time IS NULL OR expiry_time IS NULL OR (expiry_time > start_time)) NOT VALID;
 
 CREATE INDEX IF NOT EXISTS idx_deals_location_id ON deals(location_id);
 CREATE INDEX IF NOT EXISTS idx_deals_vendor_id ON deals(vendor_id);

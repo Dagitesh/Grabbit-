@@ -5,6 +5,7 @@
 #   API: http://localhost:3000  |  Health: GET http://localhost:3000/api/health
 #
 # First-time DB (after containers are up):
+#   docker compose exec api npm run db:migrate
 #   docker compose exec api npm run db:seed
 #
 # Optional: copy docker-compose.env.example → .env.docker and set secrets, then:

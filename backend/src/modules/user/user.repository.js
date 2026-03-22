@@ -12,6 +12,14 @@ const userRepository = {
     return User.findOne({ where: { email } });
   },
 
+  async findByPhone(phone, options = {}) {
+    if (!phone) return null;
+    if (options.includePassword) {
+      return User.scope('withPassword').findOne({ where: { phone } });
+    }
+    return User.findOne({ where: { phone } });
+  },
+
   async findById(id, options = {}) {
     if (options.includePassword) {
       return User.scope('withPassword').findByPk(id);

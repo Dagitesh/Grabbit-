@@ -1,6 +1,9 @@
+/**
+ * Sequelize sync only (creates/alters tables from models). Does NOT run migrations/*.sql.
+ * Use `npm run db:migrate` for SQL migrations, then seed.
+ */
 require('dotenv').config();
 const { sequelize } = require('./database');
-// Load all models so sequelize.sync creates/aligns tables
 require('../modules/user/user.model');
 require('../modules/subcity/subcity.model');
 require('../modules/vendor/vendorProfile.model');
@@ -21,10 +24,11 @@ async function run() {
     await sequelize.authenticate();
     const syncOpts = process.env.DB_SYNC_ALTER === 'true' ? { alter: true } : {};
     await sequelize.sync(syncOpts);
-    console.log('Migrations/sync completed.');
+    console.log('Sequelize sync completed.');
+    await sequelize.close();
     process.exit(0);
   } catch (err) {
-    console.error('Migration failed:', err);
+    console.error('Sync failed:', err);
     process.exit(1);
   }
 }

@@ -10,7 +10,8 @@
     "test:watch": "jest --watch",
     "test:unit": "jest tests/unit --coverage",
     "test:integration": "jest tests/integration --coverage",
-    "db:migrate": "node src/config/runMigrations.js",
+    "db:migrate": "node scripts/run-sql-migrations.js",
+    "db:sync": "node src/config/syncDb.js",
     "db:seed": "node src/config/seed.js"
   },
   "keywords": [],

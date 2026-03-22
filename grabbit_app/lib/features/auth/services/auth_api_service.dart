@@ -75,16 +75,16 @@ class AuthApiService {
     }
   }
 
-  Future<Map<String, dynamic>> verifyOtp({
-    required String email,
+  Future<AuthResponseModel> verifyOtp({
+    required String phone,
     required String otp,
   }) async {
     try {
       final response = await _dio.post(
         ApiConstants.verifyOtp,
-        data: {'email': email, 'otpCode': otp},
+        data: {'phone': phone, 'otpCode': otp},
       );
-      return response.data as Map<String, dynamic>;
+      return AuthResponseModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw Exception(_errorMessage(e));
     }

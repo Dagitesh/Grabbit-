@@ -18,7 +18,7 @@ class AuthResponseModel {
       user: UserModel.fromJson(json['user'] as Map<String, dynamic>),
       accessToken: json['accessToken'] as String,
       refreshToken: json['refreshToken'] as String,
-      expiresIn: json['expiresIn'] as int,
+      expiresIn: (json['expiresIn'] as num).toInt(),
     );
   }
 }

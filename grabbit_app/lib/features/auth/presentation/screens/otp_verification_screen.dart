@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:grabbit_app/app_gate.dart';
 import '../providers/auth_provider.dart';
-import 'login_screen.dart';
 
 class OTPVerificationScreen extends StatefulWidget {
-  final String email;
+  final String phone;
 
-  const OTPVerificationScreen({super.key, required this.email});
+  const OTPVerificationScreen({super.key, required this.phone});
 
   @override
   State<OTPVerificationScreen> createState() => _OTPVerificationScreenState();
@@ -34,17 +34,17 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
       return;
     }
     try {
-      await context.read<AuthProvider>().verifyOtp(
-            email: widget.email,
+      await context.read<AuthProvider>().verifyOtpAndSignIn(
+            phone: widget.phone,
             otp: _otpController.text.trim(),
           );
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const AppGate()),
         (route) => false,
       );
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email verified. You can now log in.')),
+        const SnackBar(content: Text('Phone verified. Welcome to Grabbit!')),
       );
     } catch (e) {
       final msg = e is Exception ? e.toString() : 'Verification failed';
@@ -68,20 +68,20 @@ class _OTPVerificationScreenState extends State<OTPVerificationScreen> {
               children: [
                 const SizedBox(height: 48),
                 Icon(
-                  Icons.mark_email_read_outlined,
+                  Icons.sms_outlined,
                   size: 64,
                   color: Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'Verify your email',
+                  'Verify your phone',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'We sent a 6-digit code to ${widget.email}. Enter it below.',
+                  'We sent a 6-digit code via SMS to ${widget.phone}. Enter it below.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),

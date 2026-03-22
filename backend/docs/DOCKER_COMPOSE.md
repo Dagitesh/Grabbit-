@@ -16,15 +16,20 @@ docker compose up --build
 - **Health:** `GET http://localhost:3000/api/health`
 - **Postgres:** `localhost:5432` (user `grabbit`, database `grabbit_db`, password default `grabbit_dev_password`)
 
-## First run: seed data
+## First run: migrations + seed
+
+The API expects **SQL migrations** (`backend/migrations/*.sql`) for v3 columns (`subcity_id`, `owner_name`, etc.). `sequelize.sync()` on startup **does not** replace running these files.
 
 After the stack is healthy:
 
 ```bash
+docker compose exec api npm run db:migrate
 docker compose exec api npm run db:seed
 ```
 
-If you use SQL migrations instead of `sequelize.sync`, run them against the DB (e.g. `psql` or `docker compose exec postgres ...`).
+`npm run db:migrate` runs `001` → `004` in order. Idempotent where possible (`IF NOT EXISTS`).
+
+Optional: `npm run db:sync` runs **Sequelize sync only** (no SQL files) — useful for dev; use **after** SQL migrations if you need it.
 
 ## Environment overrides
 

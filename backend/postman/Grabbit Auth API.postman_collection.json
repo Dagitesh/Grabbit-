@@ -63,7 +63,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"john@example.com\",\n  \"otpCode\": \"123456\"\n}"
+              "raw": "{\n  \"phone\": \"+251911000000\",\n  \"otpCode\": \"123456\"\n}"
             },
             "url": "{{baseUrl}}/api/auth/verify-otp"
           }

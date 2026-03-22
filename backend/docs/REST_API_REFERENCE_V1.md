@@ -40,7 +40,8 @@ Development: http://localhost:3000
 ### OTP (customer registration)
 
 - OTP length: **6** digits; expiry: **5** minutes (`OTP_EXPIRY_MINUTES`).
-- Set `MOCK_OTP_LOG=true` in development to log OTP to server console.
+- OTP is delivered by **SMS to the phone number** (not email). **`SMS_ENABLED` defaults to on**; set `SMS_ENABLED=false` to force mock-only. Without Twilio credentials (`TWILIO_*`), the server logs the SMS body (`[SMS MOCK]`). See `docs/SMS_OTP.md`.
+- Set `MOCK_OTP_LOG=true` in development to also log the raw OTP digits when in mock mode.
 
 ### Logout
 
@@ -53,7 +54,7 @@ Development: http://localhost:3000
 **POST**  
 `/api/auth/login`
 
-Short description: Authenticate with email and password. Returns user profile and token pair. **Requires verified email** (`is_verified: true`).
+Short description: Authenticate with email and password. Returns user profile and token pair. **Does not require** `is_verified` (users may log in before completing SMS OTP verification).
 
 🔐 **Auth required:** No
 
@@ -99,14 +100,6 @@ Content-Type: application/json
 }
 ```
 *401 — wrong credentials*
-
-```json
-{
-  "success": false,
-  "message": "Account not verified. Please verify with OTP first."
-}
-```
-*403 — valid password but email not verified*
 
 ```json
 {
@@ -235,7 +228,7 @@ Clients should **remove** stored `accessToken` and `refreshToken`. Optional: cal
 |--------|------|-------------|
 | POST | `/api/auth/register` | Customer self-registration (OTP sent / stored; role forced to CUSTOMER) |
 | POST | `/api/auth/login` | Login → tokens |
-| POST | `/api/auth/verify-otp` | Verify email with 6-digit OTP |
+| POST | `/api/auth/verify-otp` | Verify phone with 6-digit OTP (SMS) |
 | POST | `/api/auth/refresh-token` | Rotate access + refresh tokens |
 
 ---
@@ -386,17 +379,17 @@ Standard error envelope (most routes):
   "role": "CUSTOMER",
   "is_verified": false,
   "subcity_id": "uuid",
-  "message": "Registration successful. Please verify your email with the OTP sent."
+  "message": "Registration successful. Enter the verification code sent to your phone via SMS."
 }
 ```
 
-**Errors:** `400` invalid subcity · `409` email exists · `422` validation
+**Errors:** `400` invalid subcity / phone · `409` email or phone already registered · `503` SMS send failed · `422` validation
 
 ---
 
 ### POST `/api/auth/verify-otp`
 
-**Description:** Mark email verified after correct 6-digit OTP.
+**Description:** Mark account verified after correct 6-digit OTP (lookup by **phone**, same as registration).
 
 **Auth:** No
 
@@ -404,22 +397,33 @@ Standard error envelope (most routes):
 
 ```json
 {
-  "email": "jane@example.com",
+  "phone": "+251911000000",
   "otpCode": "123456"
 }
 ```
 
 (`otp` accepted instead of `otpCode`.)
 
-**200:**
+**200:** Same shape as **POST `/api/auth/login`**: signed-in session (access + refresh tokens).
 
 ```json
 {
-  "message": "Email verified successfully. You can now log in."
+  "message": "Phone verified successfully. Welcome to Grabbit.",
+  "user": {
+    "id": "uuid",
+    "full_name": "Jane Doe",
+    "email": "jane@example.com",
+    "phone": "+251911000000",
+    "role": "CUSTOMER",
+    "is_verified": true
+  },
+  "accessToken": "jwt-access",
+  "refreshToken": "jwt-refresh",
+  "expiresIn": 900
 }
 ```
 
-**Errors:** `400` invalid/expired OTP · `404` user not found · `422` validation
+**Errors:** `400` invalid/expired OTP · `404` user not found for phone · `422` validation
 
 ---
 
@@ -834,7 +838,7 @@ Authorization: Bearer {{accessToken}}
 ### Example workflow
 
 1. **POST** `/api/auth/register` → note email; check OTP (e.g. `MOCK_OTP_LOG` or your email provider).  
-2. **POST** `/api/auth/verify-otp` with `otpCode`.  
+2. **POST** `/api/auth/verify-otp` with `phone` + `otpCode`.  
 3. **POST** `/api/auth/login` → scripts store tokens.  
 4. **GET** `/api/me` with Bearer.  
 5. **GET** `/api/deals` (public).  

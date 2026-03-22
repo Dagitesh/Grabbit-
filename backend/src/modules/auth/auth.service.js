@@ -11,6 +11,7 @@ const {
   REFRESH_TOKEN_EXPIRY,
   OTP_LENGTH,
 } = require('../../config/constants');
+const { normalizePhoneE164, sendRegistrationOtp } = require('../../services/sms.service');
 
 const SALT_ROUNDS = 12;
 
@@ -62,6 +63,19 @@ const authService = {
       throw err;
     }
 
+    const normalizedPhone = normalizePhoneE164(phone);
+    if (!normalizedPhone || normalizedPhone.length < 10) {
+      const err = new Error('A valid phone number is required for SMS verification');
+      err.statusCode = 400;
+      throw err;
+    }
+    const existingPhone = await userRepository.findByPhone(normalizedPhone);
+    if (existingPhone) {
+      const err = new Error('Phone number already registered');
+      err.statusCode = 409;
+      throw err;
+    }
+
     const fn = String(first_name).trim();
     const ln = String(last_name).trim();
     const full_name = `${fn} ${ln}`.trim();
@@ -74,7 +88,7 @@ const authService = {
       id: uuidv4(),
       full_name,
       email: String(email).trim().toLowerCase(),
-      phone: phone ? String(phone).trim() : null,
+      phone: normalizedPhone,
       password_hash: hashedPassword,
       role: ROLES.CUSTOMER,
       is_verified: false,
@@ -89,8 +103,19 @@ const authService = {
       subcity_id,
     });
 
-    if (process.env.MOCK_OTP_LOG === 'true') {
-      console.log(`[MOCK OTP] Email ${email} -> OTP: ${otpCode} (expires in ${OTP_EXPIRY_MINUTES} min)`);
+    try {
+      await sendRegistrationOtp(normalizedPhone, otpCode);
+    } catch (smsErr) {
+      console.error('[SMS] Failed to send OTP:', smsErr.message || smsErr);
+      try {
+        await CustomerProfile.destroy({ where: { user_id: user.id } });
+        await user.destroy();
+      } catch (cleanupErr) {
+        console.error('[SMS] Rollback failed:', cleanupErr.message || cleanupErr);
+      }
+      const err = new Error('Could not send verification SMS. Please try again later.');
+      err.statusCode = 503;
+      throw err;
     }
 
     return {
@@ -100,7 +125,7 @@ const authService = {
       role: user.role,
       is_verified: user.is_verified,
       subcity_id,
-      message: 'Registration successful. Please verify your email with the OTP sent.',
+      message: 'Registration successful. Enter the verification code sent to your phone via SMS.',
     };
   },
 
@@ -116,12 +141,6 @@ const authService = {
     if (!match) {
       const err = new Error('Invalid email or password');
       err.statusCode = 401;
-      throw err;
-    }
-
-    if (!user.is_verified) {
-      const err = new Error('Account not verified. Please verify with OTP first.');
-      err.statusCode = 403;
       throw err;
     }
 
@@ -143,10 +162,11 @@ const authService = {
     };
   },
 
-  async verifyOtp(email, otpCode) {
-    const user = await userRepository.findByEmail(email, { includePassword: false });
+  async verifyOtp(phone, otpCode) {
+    const normalizedPhone = normalizePhoneE164(phone);
+    const user = await userRepository.findByPhone(normalizedPhone, { includePassword: false });
     if (!user) {
-      const err = new Error('User not found');
+      const err = new Error('User not found for this phone number');
       err.statusCode = 404;
       throw err;
     }
@@ -172,8 +192,23 @@ const authService = {
 
     await userRepository.clearOtpAndVerify(user.id);
 
+    const fresh = await userRepository.findById(user.id);
+    const accessToken = generateAccessToken(fresh.id, fresh.role);
+    const refreshToken = generateRefreshToken(fresh.id);
+
     return {
-      message: 'Email verified successfully. You can now log in.',
+      message: 'Phone verified successfully. Welcome to Grabbit.',
+      user: {
+        id: fresh.id,
+        full_name: fresh.full_name,
+        email: fresh.email,
+        phone: fresh.phone,
+        role: fresh.role,
+        is_verified: fresh.is_verified,
+      },
+      accessToken,
+      refreshToken,
+      expiresIn: 900,
     };
   },
 

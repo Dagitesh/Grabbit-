@@ -2,17 +2,21 @@
 
 ## Database migration
 
-Run on PostgreSQL **after** `001` / `002`:
+**Recommended (applies `001` → `004` in order):**
+
+```bash
+cd backend
+npm run db:migrate
+npm run db:seed
+```
+
+`db:migrate` runs all `migrations/*.sql` files; this adds `subcity_id`, `owner_name`, moderation columns, etc. **Sequelize `sync()` alone does not run these SQL files.**
+
+Alternatively, run SQL manually:
 
 ```bash
 psql $DATABASE_URL -f migrations/003_addis_subcities_vendor_customer_reviews.sql
 psql $DATABASE_URL -f migrations/004_deal_admin_moderation.sql
-```
-
-Then seed subcities + categories:
-
-```bash
-npm run db:seed
 ```
 
 ## Model highlights
@@ -28,7 +32,8 @@ npm run db:seed
 ## Auth
 
 - **`POST /api/auth/register`**: **customers only** — `first_name`, `last_name`, `email`, `phone`, `subcity_id`, `password` (no `role`).
-- **`POST /api/auth/verify-otp`**: body `otpCode` or `otp` (6 digits).
+- **`POST /api/auth/verify-otp`**: body `phone` + `otpCode` or `otp` (6 digits). OTP is sent by **SMS** at registration (not email).
+- **`POST /api/auth/login`**: email + password only; **`is_verified` is not required** to obtain tokens.
 
 ## Public
 

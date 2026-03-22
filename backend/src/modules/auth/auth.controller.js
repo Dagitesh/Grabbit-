@@ -30,9 +30,9 @@ const authController = {
 
   async verifyOtp(req, res, next) {
     try {
-      const { email } = req.body;
+      const { phone } = req.body;
       const otpCode = req.body.otpCode ?? req.body.otp;
-      const result = await authService.verifyOtp(email, otpCode);
+      const result = await authService.verifyOtp(phone, otpCode);
       res.json(result);
     } catch (err) {
       next(err);

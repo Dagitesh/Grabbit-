@@ -14,19 +14,24 @@ CREATE TABLE IF NOT EXISTS subcities (
   CONSTRAINT subcities_name_key UNIQUE (name)
 );
 
-INSERT INTO subcities (name, sort_order) VALUES
-  ('Addis Ketema', 1),
-  ('Akaky Kaliti', 2),
-  ('Arada', 3),
-  ('Bole', 4),
-  ('Gulele', 5),
-  ('Kirkos', 6),
-  ('Kolfe Keranio', 7),
-  ('Lideta', 8),
-  ('Nifas Silk-Lafto', 9),
-  ('Yeka', 10),
-  ('Lemi Kura', 11),
-  ('Other', 99)
+ALTER TABLE subcities ALTER COLUMN id SET DEFAULT gen_random_uuid();
+ALTER TABLE subcities ALTER COLUMN created_at SET DEFAULT NOW();
+ALTER TABLE subcities ALTER COLUMN updated_at SET DEFAULT NOW();
+
+-- Explicit ids + timestamps: legacy `subcities` tables may lack defaults on id/timestamps.
+INSERT INTO subcities (id, name, sort_order, created_at, updated_at) VALUES
+  (gen_random_uuid(), 'Addis Ketema', 1, NOW(), NOW()),
+  (gen_random_uuid(), 'Akaky Kaliti', 2, NOW(), NOW()),
+  (gen_random_uuid(), 'Arada', 3, NOW(), NOW()),
+  (gen_random_uuid(), 'Bole', 4, NOW(), NOW()),
+  (gen_random_uuid(), 'Gulele', 5, NOW(), NOW()),
+  (gen_random_uuid(), 'Kirkos', 6, NOW(), NOW()),
+  (gen_random_uuid(), 'Kolfe Keranio', 7, NOW(), NOW()),
+  (gen_random_uuid(), 'Lideta', 8, NOW(), NOW()),
+  (gen_random_uuid(), 'Nifas Silk-Lafto', 9, NOW(), NOW()),
+  (gen_random_uuid(), 'Yeka', 10, NOW(), NOW()),
+  (gen_random_uuid(), 'Lemi Kura', 11, NOW(), NOW()),
+  (gen_random_uuid(), 'Other', 99, NOW(), NOW())
 ON CONFLICT (name) DO NOTHING;
 
 -- =============================================================================

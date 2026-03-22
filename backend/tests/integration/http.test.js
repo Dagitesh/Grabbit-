@@ -26,10 +26,10 @@ describe('HTTP integration (no database)', () => {
     expect(res.body.success).toBe(false);
   });
 
-  it('POST /api/auth/verify-otp requires 6-digit code (422)', async () => {
+  it('POST /api/auth/verify-otp requires phone + 6-digit code (422)', async () => {
     const res = await request(app)
       .post('/api/auth/verify-otp')
-      .send({ email: 'a@b.com', otpCode: '12' })
+      .send({ phone: '+251911234567', otpCode: '12' })
       .expect(422);
     expect(res.body.success).toBe(false);
   });

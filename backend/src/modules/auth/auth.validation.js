@@ -19,7 +19,7 @@ const loginValidation = [
 ];
 
 const verifyOtpValidation = [
-  body('email').trim().notEmpty().withMessage('Email is required').isEmail().normalizeEmail(),
+  body('phone').trim().notEmpty().withMessage('Phone number is required'),
   body().custom((_, { req }) => {
     const code = req.body.otpCode ?? req.body.otp;
     if (!code || !/^\d{6}$/.test(String(code).trim())) {

@@ -3,8 +3,14 @@ jest.mock('bcryptjs', () => ({
   compare: jest.fn(),
 }));
 
+jest.mock('../../src/services/sms.service', () => ({
+  normalizePhoneE164: jest.requireActual('../../src/services/sms.service').normalizePhoneE164,
+  sendRegistrationOtp: jest.fn().mockResolvedValue({ mock: true }),
+}));
+
 jest.mock('../../src/modules/user/user.repository', () => ({
   findByEmail: jest.fn(),
+  findByPhone: jest.fn(),
   create: jest.fn(),
   findById: jest.fn(),
   clearOtpAndVerify: jest.fn(),
@@ -62,6 +68,7 @@ describe('auth.service', () => {
     it('creates customer when subcity valid and email free', async () => {
       Subcity.findByPk.mockResolvedValue({ id: 'sc1', name: 'Bole' });
       userRepository.findByEmail.mockResolvedValue(null);
+      userRepository.findByPhone.mockResolvedValue(null);
       bcrypt.hash.mockResolvedValue('hashed-pass');
       userRepository.create.mockResolvedValue({
         id: 'new-user-id',
@@ -76,7 +83,7 @@ describe('auth.service', () => {
         first_name: 'A',
         last_name: 'B',
         email: 'new@b.com',
-        phone: '+251911',
+        phone: '+251911234567',
         password: 'secret1',
         subcity_id: '00000000-0000-4000-8000-000000000001',
       });
@@ -102,13 +109,23 @@ describe('auth.service', () => {
       await expect(authService.login('x@y.com', 'wrong')).rejects.toMatchObject({ statusCode: 401 });
     });
 
-    it('rejects unverified account', async () => {
+    it('returns tokens when password matches even if account not OTP-verified', async () => {
       userRepository.findByEmail.mockResolvedValue({
+        id: 'u1',
+        full_name: 'Test User',
+        email: 't@t.com',
+        phone: null,
         password_hash: 'hash',
+        role: 'CUSTOMER',
         is_verified: false,
       });
       bcrypt.compare.mockResolvedValue(true);
-      await expect(authService.login('x@y.com', 'ok')).rejects.toMatchObject({ statusCode: 403 });
+
+      const result = await authService.login('t@t.com', 'password');
+
+      expect(result.accessToken).toBeTruthy();
+      expect(result.refreshToken).toBeTruthy();
+      expect(result.user.is_verified).toBe(false);
     });
 
     it('returns tokens when verified and password matches', async () => {
@@ -134,14 +151,42 @@ describe('auth.service', () => {
 
   describe('verifyOtp', () => {
     it('rejects invalid OTP', async () => {
-      userRepository.findByEmail.mockResolvedValue({ id: 'u1' });
+      userRepository.findByPhone.mockResolvedValue({ id: 'u1' });
       const userWithOtp = {
         otp_code: '111111',
         otp_expires_at: new Date(Date.now() + 60000),
       };
       userRepository.findById.mockResolvedValue(userWithOtp);
 
-      await expect(authService.verifyOtp('u@u.com', '999999')).rejects.toMatchObject({ statusCode: 400 });
+      await expect(authService.verifyOtp('+251911234567', '999999')).rejects.toMatchObject({ statusCode: 400 });
+    });
+
+    it('returns tokens when OTP is valid', async () => {
+      userRepository.findByPhone.mockResolvedValue({ id: 'u1' });
+      const future = new Date(Date.now() + 60000);
+      userRepository.findById
+        .mockResolvedValueOnce({
+          id: 'u1',
+          otp_code: '111111',
+          otp_expires_at: future,
+        })
+        .mockResolvedValueOnce({
+          id: 'u1',
+          full_name: 'Test User',
+          email: 't@t.com',
+          phone: '+251911234567',
+          role: 'CUSTOMER',
+          is_verified: true,
+        });
+      userRepository.clearOtpAndVerify.mockResolvedValue(undefined);
+
+      const result = await authService.verifyOtp('+251911234567', '111111');
+
+      expect(result.accessToken).toBeTruthy();
+      expect(result.refreshToken).toBeTruthy();
+      expect(result.user.email).toBe('t@t.com');
+      expect(result.user.is_verified).toBe(true);
+      expect(result.expiresIn).toBe(900);
     });
   });
 
