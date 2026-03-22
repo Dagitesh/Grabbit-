@@ -4,3 +4,5 @@ uploads/*
 !uploads/.gitkeep
 coverage/
 .env.example
+backend/.env
+backend/.env.example
