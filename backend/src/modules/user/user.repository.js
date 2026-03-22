@@ -12,7 +12,7 @@ const userRepository = {
     return User.findOne({ where: { email } });
   },
 
-<<<<<<< HEAD
+
   async findByPhone(phone, options = {}) {
     if (!phone) return null;
     if (options.includePassword) {
@@ -21,8 +21,7 @@ const userRepository = {
     return User.findOne({ where: { phone } });
   },
 
-=======
->>>>>>> b4445c22d74b08dfbe6b25d0ba95eee6eaf515aa
+
   async findById(id, options = {}) {
     if (options.includePassword) {
       return User.scope('withPassword').findByPk(id);

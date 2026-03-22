@@ -10,11 +10,9 @@ const {
   ACCESS_TOKEN_EXPIRY,
   REFRESH_TOKEN_EXPIRY,
   OTP_LENGTH,
-} = require('../../config/constants');
-<<<<<<< HEAD
+} = require('../../config/constants')
 const { normalizePhoneE164, sendRegistrationOtp } = require('../../services/sms.service');
-=======
->>>>>>> b4445c22d74b08dfbe6b25d0ba95eee6eaf515aa
+
 
 const SALT_ROUNDS = 12;
 
@@ -66,7 +64,7 @@ const authService = {
       throw err;
     }
 
-<<<<<<< HEAD
+
     const normalizedPhone = normalizePhoneE164(phone);
     if (!normalizedPhone || normalizedPhone.length < 10) {
       const err = new Error('A valid phone number is required for SMS verification');
@@ -80,8 +78,7 @@ const authService = {
       throw err;
     }
 
-=======
->>>>>>> b4445c22d74b08dfbe6b25d0ba95eee6eaf515aa
+
     const fn = String(first_name).trim();
     const ln = String(last_name).trim();
     const full_name = `${fn} ${ln}`.trim();
@@ -94,11 +91,9 @@ const authService = {
       id: uuidv4(),
       full_name,
       email: String(email).trim().toLowerCase(),
-<<<<<<< HEAD
+
       phone: normalizedPhone,
-=======
-      phone: phone ? String(phone).trim() : null,
->>>>>>> b4445c22d74b08dfbe6b25d0ba95eee6eaf515aa
+
       password_hash: hashedPassword,
       role: ROLES.CUSTOMER,
       is_verified: false,
@@ -113,7 +108,7 @@ const authService = {
       subcity_id,
     });
 
-<<<<<<< HEAD
+
     try {
       await sendRegistrationOtp(normalizedPhone, otpCode);
     } catch (smsErr) {
@@ -127,10 +122,7 @@ const authService = {
       const err = new Error('Could not send verification SMS. Please try again later.');
       err.statusCode = 503;
       throw err;
-=======
-    if (process.env.MOCK_OTP_LOG === 'true') {
-      console.log(`[MOCK OTP] Email ${email} -> OTP: ${otpCode} (expires in ${OTP_EXPIRY_MINUTES} min)`);
->>>>>>> b4445c22d74b08dfbe6b25d0ba95eee6eaf515aa
+
     }
 
     return {
@@ -140,11 +132,9 @@ const authService = {
       role: user.role,
       is_verified: user.is_verified,
       subcity_id,
-<<<<<<< HEAD
+
       message: 'Registration successful. Enter the verification code sent to your phone via SMS.',
-=======
-      message: 'Registration successful. Please verify your email with the OTP sent.',
->>>>>>> b4445c22d74b08dfbe6b25d0ba95eee6eaf515aa
+
     };
   },
 
@@ -163,15 +153,8 @@ const authService = {
       throw err;
     }
 
-<<<<<<< HEAD
-=======
-    if (!user.is_verified) {
-      const err = new Error('Account not verified. Please verify with OTP first.');
-      err.statusCode = 403;
-      throw err;
-    }
 
->>>>>>> b4445c22d74b08dfbe6b25d0ba95eee6eaf515aa
+
     const accessToken = generateAccessToken(user.id, user.role);
     const refreshToken = generateRefreshToken(user.id);
 
@@ -190,18 +173,13 @@ const authService = {
     };
   },
 
-<<<<<<< HEAD
+
   async verifyOtp(phone, otpCode) {
     const normalizedPhone = normalizePhoneE164(phone);
     const user = await userRepository.findByPhone(normalizedPhone, { includePassword: false });
     if (!user) {
       const err = new Error('User not found for this phone number');
-=======
-  async verifyOtp(email, otpCode) {
-    const user = await userRepository.findByEmail(email, { includePassword: false });
-    if (!user) {
-      const err = new Error('User not found');
->>>>>>> b4445c22d74b08dfbe6b25d0ba95eee6eaf515aa
+
       err.statusCode = 404;
       throw err;
     }
@@ -227,7 +205,7 @@ const authService = {
 
     await userRepository.clearOtpAndVerify(user.id);
 
-<<<<<<< HEAD
+
     const fresh = await userRepository.findById(user.id);
     const accessToken = generateAccessToken(fresh.id, fresh.role);
     const refreshToken = generateRefreshToken(fresh.id);
@@ -245,10 +223,7 @@ const authService = {
       accessToken,
       refreshToken,
       expiresIn: 900,
-=======
-    return {
-      message: 'Email verified successfully. You can now log in.',
->>>>>>> b4445c22d74b08dfbe6b25d0ba95eee6eaf515aa
+
     };
   },
 

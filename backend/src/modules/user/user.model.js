@@ -27,12 +27,7 @@ const User = sequelize.define(
     },
     password_hash: {
       type: DataTypes.STRING(255),
-      allowNull: false,
-<<<<<<< HEAD
-      // Column name in DB is `password_hash` (see migrations/001_grabbit_schema_v2.sql renames legacy `password`).
-=======
-      field: 'password', // DB column remains "password" until you run migrations/001_grabbit_schema_v2.sql
->>>>>>> b4445c22d74b08dfbe6b25d0ba95eee6eaf515aa
+      allowNull: false
     },
     role: {
       type: DataTypes.STRING(20),
